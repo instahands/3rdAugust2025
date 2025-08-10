@@ -1,11 +1,12 @@
-// src/supabaseClient.ts
+// src/supabaseClient.ts (TEMPORARY HARDCODED FIX)
+
 import { createClient } from '@supabase/supabase-js';
 
-// Securely read environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+// const supabaseUrl = import.meta.env.VITE_SUPABASE_URL; // Comment this line out
+const supabaseUrl = "https://jjirowcfoblviyklpuyz.supabase.co"; // Add this line with your actual URL
+
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Throw an error if the variables are not set, preventing runtime issues
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Supabase URL and Anon Key are required.");
 }
