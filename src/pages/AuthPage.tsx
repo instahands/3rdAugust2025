@@ -52,8 +52,14 @@ export default function AuthPage() {
         setLoading(false);
     };
     
+    // --- THIS IS THE CORRECTED FUNCTION ---
     const handleGoogleLogin = async () => {
-        const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: 'https://instahands.in/app',
+            },
+        });
         if (error) {
             setError(error.message);
         }
