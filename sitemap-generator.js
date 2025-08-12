@@ -1,7 +1,8 @@
 // sitemap-generator.js
 
-const sitemap = require('sitemap');
-const fs = require('fs');
+import { SitemapStream } from 'sitemap';
+import { createWriteStream, existsSync, mkdirSync } from 'fs';
+import { resolve } from 'path';
 
 // Define the base URL of your website
 const hostname = 'https://instahands.in';
@@ -12,16 +13,29 @@ const urls = [
   { url: '/app', changefreq: 'weekly', priority: 0.9 },
   { url: '/app/orders', changefreq: 'weekly', priority: 0.7 },
   { url: '/app/account', changefreq: 'monthly', priority: 0.6 },
-  // Add more public routes here if you have any
+  // Add more public routes here as needed
 ];
 
+// --- FIX ---
+// Check if the output directory exists, and create it if it doesn't.
+const outputDir = 'dist';
+if (!existsSync(outputDir)) {
+  mkdirSync(outputDir);
+}
+// --- END FIX ---
+
 // Create the sitemap instance
-const sm = sitemap.createSitemap({
-  hostname: hostname,
-  urls: urls
+const sitemap = new SitemapStream({ hostname });
+
+const writeStream = createWriteStream(resolve(outputDir, 'sitemap.xml'));
+sitemap.pipe(writeStream);
+
+// Write the sitemap to the output directory
+urls.forEach(url => {
+  sitemap.write(url);
 });
+sitemap.end();
 
-// Write the sitemap to the 'public' directory
-fs.writeFileSync('public/sitemap.xml', sm.toString());
-
-console.log('Sitemap created successfully!');
+writeStream.on('finish', () => {
+  console.log('Sitemap created successfully!');
+});
