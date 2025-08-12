@@ -89,7 +89,8 @@ const LandingPage = () => {
     return (
         <>
             <Helmet>
-                <title>Your Personal Helper in Bhilai & Durg</title>
+                <title>On-Demand Home Services | InstaHands App</title>
+                <meta name="description" content="InstaHands is your go-to app for on-demand home services. Book trusted plumbers, electricians, and cleaners with just a few taps. Get started today!" />
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
