@@ -111,9 +111,9 @@ const LandingPage = () => {
             <main className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-12">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-green-200 opacity-50"></div>
                 <div className="container mx-auto text-center px-6 z-10">
-                    <h2 className="text-5xl md:text-6xl lg:text-7xl font-black mb-6 h-48 md:h-32 flex items-center justify-center">
+                    <h1 className="text-5xl md:text-6xl lg:text-7xl font-black mb-6 h-48 md:h-32 flex items-center justify-center">
                         <span id="problem-statement" className="text-gradient">{problemStatement}</span>
-                    </h2>
+                    </h1>
                     <p className="text-lg md:text-xl text-green-800 max-w-2xl mx-auto mb-8">
                         Insta Hands- One Tap, All Sorted !
                     </p>
@@ -146,23 +146,23 @@ const LandingPage = () => {
             </main>
 
             <section id="local-buzz" className="py-20 bg-white">
-                <div className="container mx-auto px-6">
-                    <div className="text-center mb-16">
-                        <h3 className="text-4xl font-bold text-green-900">Trusted By Your Neighbors</h3>
-                        <p className="text-gray-600 mt-2">See the activity happening right now in Bhilai & Durg.</p>
+    <div className="container mx-auto px-6">
+        <div className="text-center mb-16">
+            <h3 className="text-4xl font-bold text-green-900">Trusted By Your Neighbors</h3>
+            <p className="text-gray-600 mt-2">See the activity happening right now in Bhilai & Durg.</p>
+        </div>
+        {/* The iframe has been removed to resolve the 404 error */}
+        <div id="map-container" className="relative max-w-4xl mx-auto aspect-video rounded-2xl bg-green-100 border-4 border-green-200 shadow-lg overflow-hidden">
+            <div id="map-overlay" className="absolute inset-0 pointer-events-none">
+                {popups.map(popup => (
+                    <div key={popup.id} className={`popup-animation ${popup.exiting ? 'exiting' : ''} absolute bg-white/80 backdrop-blur-sm text-green-900 text-xs sm:text-sm font-semibold py-2 px-3 rounded-full shadow-lg pointer-events-auto`} style={{ top: popup.coords.top, left: popup.coords.left }}>
+                        {popup.text}
                     </div>
-                    <div id="map-container" className="relative max-w-4xl mx-auto aspect-video rounded-2xl bg-green-100 border-4 border-green-200 shadow-lg overflow-hidden">
-                        <iframe src="http://googleusercontent.com/maps.google.com/5" width="100%" height="100%" style={{ border: 0 }} allowFullScreen={false} loading="lazy" referrerPolicy="no-referrer-when-downgrade"></iframe>
-                        <div id="map-overlay" className="absolute inset-0 pointer-events-none">
-                            {popups.map(popup => (
-                                <div key={popup.id} className={`popup-animation ${popup.exiting ? 'exiting' : ''} absolute bg-white/80 backdrop-blur-sm text-green-900 text-xs sm:text-sm font-semibold py-2 px-3 rounded-full shadow-lg pointer-events-auto`} style={{ top: popup.coords.top, left: popup.coords.left }}>
-                                    {popup.text}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
+                ))}
+            </div>
+        </div>
+    </div>
+</section>
 
             <section id="how-it-works" className="py-20 bg-gray-50">
                 <div className="container mx-auto px-6">

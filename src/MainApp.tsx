@@ -17,9 +17,9 @@ import ServiceDetailModal from './components/home/ServiceDetailModal';
 import AddAddressModal from './components/account/AddAddressModal';
 import { HomeIcon, ListIcon, AccountIcon } from './components/common/Icons';
 
-// --- Type Definitions ---
-interface Service { name: string; price: number; /* Add other service properties as needed */ }
-interface Address { id: number; address_type: string; street_address: string; city: string; state: string; postal_code: string; phone_number: string; }
+import { isLocationInServiceArea, LocationCoords } from './locationService';
+import { Address, Service } from './types';
+
 
 // --- Reusable BottomNavBar ---
 const BottomNavBar = ({ setPage, currentPage }: { setPage: (page: string) => void, currentPage: string | null }) => {
@@ -59,6 +59,9 @@ export default function MainApp() {
     const [dataVersion, setDataVersion] = useState(0);
     const refreshData = () => setDataVersion(v => v + 1);
 
+    // --- NEW: State for location status at the top level ---
+    const [locationStatus, setLocationStatus] = useState<'checking' | 'available' | 'unavailable' | null>(null);
+
     // --- CORRECTED AUTH & DATA FETCHING EFFECT ---
     useEffect(() => {
         const fetchOrders = async (userId: string) => {
@@ -67,36 +70,48 @@ export default function MainApp() {
             else setOrders(data || []);
         };
 
-        // This function contains the logic to decide which page to show
-        const handleSession = (session: Session | null) => {
-            const user = session?.user ?? null;
-            setCurrentUser(user);
-
-            if (user) {
-                fetchOrders(user.id);
-                // Check if a new user needs to set up their profile (name is missing)
-                if (!user.user_metadata?.name) {
-                    setPage('profileSetup');
-                } else {
-                    // If user is logged in and has a profile, go to the home page.
-                    // This logic prevents needlessly navigating if the user refreshes on another page.
-                    setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
-                }
+        const checkLocationAndSetPage = (user: User) => {
+            if (navigator.geolocation) {
+                setLocationStatus('checking');
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const location = { lat: position.coords.latitude, lng: position.coords.longitude };
+                        const isAvailable = isLocationInServiceArea(location);
+                        setLocationStatus(isAvailable ? 'available' : 'unavailable');
+                        
+                        if (!user.user_metadata?.name) {
+                            setPage('profileSetup');
+                        } else {
+                            setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
+                        }
+                    },
+                    (error) => {
+                        console.error("Geolocation error:", error);
+                        setLocationStatus('unavailable');
+                        setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
+                    }
+                );
             } else {
-                // If there is no user session, show the authentication page
-                setOrders([]);
-                setPage('auth');
+                setLocationStatus('unavailable');
+                setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
             }
         };
 
-        // Call handleSession when the auth state changes in the future
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            handleSession(session);
-        });
-
-        // ALSO call handleSession right now to check the initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            handleSession(session);
+            const user = session?.user ?? null;
+            setCurrentUser(user);
+            if (user) {
+                fetchOrders(user.id);
+                if (!user.user_metadata?.name) {
+                    setPage('profileSetup');
+                } else {
+                    checkLocationAndSetPage(user);
+                }
+            } else {
+                setOrders([]);
+                setLocationStatus(null);
+                setPage('auth');
+            }
         });
 
         return () => subscription.unsubscribe();
@@ -149,7 +164,7 @@ export default function MainApp() {
             case 'home':
                 return <HomePage setPage={setPage} currentUser={currentUser} orders={orders} viewServiceDetail={viewServiceDetail} startBooking={startBooking} />;
             case 'booking': 
-                return <BookingPage setPage={setPage} service={selectedService} proceedToCheckout={proceedToCheckout} goBack={() => setPage('home')} currentUser={currentUser} dataVersion={dataVersion} openAddAddressModal={() => setIsAddModalOpen(true)} onEditAddress={handleEditAddress} />;
+                return <BookingPage setPage={setPage} service={selectedService} proceedToCheckout={proceedToCheckout} goBack={() => setPage('home')} currentUser={currentUser} dataVersion={dataVersion} openAddAddressModal={() => setIsAddModalOpen(true)} onEditAddress={handleEditAddress} locationStatus={locationStatus} />;
             case 'checkout':
                 return <CheckoutPage setPage={setPage} bookingDetails={bookingDetails} addOrder={addOrder} />;
             case 'confirmation':
@@ -166,7 +181,7 @@ export default function MainApp() {
     return (
         <div className="bg-gray-50 min-h-screen">
             <div>{renderPage()}</div>
-            {(page && page !== 'auth' && page !== 'profileSetup') && <BottomNavBar page={page} setPage={setPage} />}
+            {(page && page !== 'auth' && page !== 'profileSetup') && <BottomNavBar setPage={setPage} currentPage={page} />}
             {isServiceDetailOpen && <ServiceDetailModal service={selectedService} onClose={() => setIsServiceDetailOpen(false)} startBooking={startBooking} />}
             <AddAddressModal isOpen={isAddModalOpen} onClose={() => { setIsAddModalOpen(false); setEditingAddress(null); }} onSave={() => { refreshData(); setIsAddModalOpen(false); setEditingAddress(null); }} currentUser={currentUser} addressToEdit={editingAddress} />
         </div>
