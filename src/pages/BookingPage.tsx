@@ -1,6 +1,6 @@
 // src/pages/BookingPage.tsx
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import SubPageHeader from '../components/common/SubPageHeader';
 import AddressSelectionModal from '../components/booking/AddressSelectionModal';
@@ -9,7 +9,6 @@ import { User } from '@supabase/supabase-js';
 // Import the MapPicker component and location service
 import MapPicker from '../components/booking/MapPicker';
 import { Address, Service, LocationCoords } from '../types';
-import { isLocationInServiceArea } from '../locationService';
 
 interface BookingPageProps {
     setPage: (page: string) => void;
@@ -35,7 +34,6 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
     const [isAddressSelectorOpen, setIsAddressSelectorOpen] = useState(false);
     
     const [userLocation, setUserLocation] = useState<LocationCoords | null>(null);
-    const [draggedAddress, setDraggedAddress] = useState<string | null>(null);
     const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
 
     const [bookingData, setBookingData] = useState({
@@ -47,7 +45,6 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState('Morning');
     
-    // NEW: Function to handle initial location check
     const getInitialLocation = () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -56,21 +53,17 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
                     const lng = position.coords.longitude;
                     const location = { lat, lng };
                     setUserLocation(location);
-                    setDraggedAddress("Fetching your current address...");
                 },
                 (error) => {
                     console.error("Geolocation error:", error);
                     setUserLocation({ lat: 21.2269, lng: 81.3533 }); // Centered on Bhilai, India
-                    setDraggedAddress("Default Location: Bhilai, India");
                 }
             );
         } else {
             setUserLocation({ lat: 21.2269, lng: 81.3533 });
-            setDraggedAddress("Default Location: Bhilai, India");
         }
     };
 
-    // This useEffect gets the initial user location
     useEffect(() => {
         if (locationStatus === 'available' && !userLocation) {
             getInitialLocation();
@@ -84,26 +77,32 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
             const { data, error } = await supabase.from('addresses').select('*').eq('user_id', currentUser.id);
             if (error) { console.error("Error fetching addresses:", error); } 
             else if (data) {
-                setAddresses(data);
+                setAddresses(data as Address[]);
                 if (data.length > 0 && !selectedAddress) {
-                    setSelectedAddress(data[0]);
+                    setSelectedAddress(data[0] as Address);
                 }
             }
             setLoadingAddresses(false);
         };
         fetchAddresses();
-    }, [currentUser, dataVersion, selectedAddress]);
+    }, [currentUser, dataVersion]);
 
     const handleProceed = () => {
         if (!bookingData.workDescription.trim()) {
             alert("Please describe the work needed.");
             return;
         }
-        if (!selectedAddress && !draggedAddress) {
-            alert("Please select or pin a service address.");
+        if (!selectedAddress) {
+            alert("Please select a service address.");
             return;
         }
-        const finalBookingData = { ...bookingData, address: draggedAddress || `${selectedAddress.street_address}, ${selectedAddress.city}`, service };
+    
+        const finalBookingData = {
+            ...bookingData,
+            address: selectedAddress,
+            service,
+        };
+    
         proceedToCheckout(finalBookingData);
     };
     
@@ -129,8 +128,19 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
             {isMapPickerOpen && userLocation && (
                 <MapPicker
                     initialLocation={userLocation}
-                    onConfirm={(address) => {
-                        setDraggedAddress(address);
+                    onConfirm={(addressString: string) => {
+                        const parts = addressString.split(',').map(p => p.trim());
+                        // Create a complete Address object that matches your type definition
+                        const newAddress: Address = {
+                            id: Date.now(), // Use a timestamp for a temporary numeric ID
+                            address_type: 'Pinned Location',
+                            street_address: parts[0] || 'N/A',
+                            city: parts[1] || 'Bhilai',
+                            state: parts[2] || 'Chhattisgarh',
+                            postal_code: parts[3] || '490001',
+                            phone_number: currentUser?.phone || '', // Add phone number
+                        };
+                        setSelectedAddress(newAddress);
                         setIsMapPickerOpen(false);
                     }}
                     onCancel={() => setIsMapPickerOpen(false)}
@@ -159,12 +169,7 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
                         <div>
                             <h3 className="font-bold text-lg mb-2">Service Address</h3>
                             <button onClick={() => setIsAddressSelectorOpen(true)} className="w-full p-4 text-left border-2 border-dashed rounded-lg flex items-center justify-between hover:bg-gray-50">
-                                {draggedAddress ? (
-                                    <div className="text-sm">
-                                        <p className="font-bold text-base">Detected Address</p>
-                                        <p className="text-gray-600">{draggedAddress}</p>
-                                    </div>
-                                ) : loadingAddresses ? ( <span className="text-gray-500">Loading addresses...</span> ) 
+                                {loadingAddresses ? ( <span className="text-gray-500">Loading addresses...</span> ) 
                                 : selectedAddress ? (
                                     <div className="text-sm">
                                         <p className="font-bold text-base">{selectedAddress.address_type}</p>
@@ -227,7 +232,10 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
                 isOpen={isAddressSelectorOpen}
                 onClose={() => setIsAddressSelectorOpen(false)}
                 addresses={addresses}
-                onSelectAddress={setSelectedAddress}
+                onSelectAddress={(address) => {
+                    setSelectedAddress(address);
+                    setIsAddressSelectorOpen(false);
+                }}
                 onAddNew={openAddAddressModal}
                 onEdit={(address) => {
                     setIsAddressSelectorOpen(false);

@@ -9,6 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_GOOGLE_MAPS_API_KEY: string;
   // Add any other environment variables here
   readonly VITE_GOOGLE_MAP_ID: string;
+  readonly VITE_RAZORPAY_KEY_ID: string;
 }
 
 interface ImportMeta {
