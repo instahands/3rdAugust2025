@@ -2,6 +2,7 @@
 
 import { User } from '@supabase/supabase-js';
 
+
 // Import reusable components
 import { UserIcon, SearchIcon, StarIcon, ShieldCheckIcon, HeadsetIcon, BadgeCheckIcon } from '../components/common/Icons';
 import AdCarousel from '../components/home/AdCarousel';

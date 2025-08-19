@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+
 import { UserIcon, ProfileIcon, AddressIcon, PaymentIcon, NotificationIcon, HelpIcon, ChevronRightIcon } from '../components/common/Icons';
 
 // Import the sub-pages

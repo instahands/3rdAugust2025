@@ -6,6 +6,7 @@ import SubPageHeader from '../components/common/SubPageHeader';
 import AddressSelectionModal from '../components/booking/AddressSelectionModal';
 import { User } from '@supabase/supabase-js';
 
+
 // Import the MapPicker component and location service
 import MapPicker from '../components/booking/MapPicker';
 import { Address, Service, LocationCoords } from '../types';

@@ -3,6 +3,7 @@
 import React from 'react';
 import { CalendarIcon, ClockIcon, LocationPinIcon } from '../components/common/Icons';
 
+
 export default function ConfirmationPage({ setPage, bookingDetails }: any) {
     if (!bookingDetails) {
         return (
