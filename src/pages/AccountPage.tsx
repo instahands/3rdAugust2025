@@ -25,8 +25,6 @@ const AccountMenu = ({ setPage, currentUser, handleLogout }: AccountMenuProps) =
     const menuItems = [
         { name: 'Profile Details', icon: <ProfileIcon />, page: 'profileDetails' },
         { name: 'Saved Addresses', icon: <AddressIcon />, page: 'savedAddresses' },
-        { name: 'Payment Methods', icon: <PaymentIcon />, page: 'paymentMethods' },
-        { name: 'Notifications', icon: <NotificationIcon />, page: 'notifications' },
         { name: 'Help Center', icon: <HelpIcon />, page: 'helpCenter' },
     ];
 
@@ -94,10 +92,6 @@ export default function AccountPage({ currentUser, handleLogout }: AccountPagePr
             case 'savedAddresses':
                 // The type of setEditingAddress now correctly matches the prop requirement
                 return <SavedAddressesPage setPage={setSubPage} currentUser={currentUser} openAddAddressModal={handleOpenAddAddressModal} setEditingAddress={setEditingAddress} />;
-            case 'paymentMethods':
-                return <PaymentMethodsPage setPage={setSubPage} />;
-            case 'notifications':
-                return <NotificationsPage setPage={setSubPage} />;
             case 'helpCenter':
                 return <HelpCenterPage setPage={setSubPage} />;
             default:

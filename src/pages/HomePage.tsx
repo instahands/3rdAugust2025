@@ -5,7 +5,7 @@ import { User } from '@supabase/supabase-js';
 import { Service } from '../types'; 
 
 // Import reusable components
-import { UserIcon, SearchIcon, StarIcon, ShieldCheckIcon, HeadsetIcon, BadgeCheckIcon } from '../components/common/Icons';
+import { UserIcon, SearchIcon} from '../components/common/Icons';
 import AdCarousel from '../components/home/AdCarousel';
 import ServiceGrid from '../components/home/ServiceGrid';
 
@@ -32,13 +32,6 @@ const services: Service[] = [
     { name: 'Temporary Manpower', manpowerType: 'Temporary Manpower', color: 'bg-cyan-500', price: 199, description: 'For events, house functions, or short tasks.', imageUrl: 'https://images.pexels.com/photos/1181406/pexels-photo-1181406.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop', trainedTo: ['2 Hour Helper (Lift/Move/Setup)', '4 Hour Helper (Extra Hands at Home/Office)', 'Wedding/Event Setup Support', 'Labour for Shops/Stores (Inventory/Arranging)', 'Daily/Hourly Labour', 'Temporary Society Cleaning Helper', 'Waiters/Servers (non-hotel) for private events'], needs: ['Clear task list', 'Supervision for the task'], excluded: ['Skilled labour unless specified', 'Long-term contracts'] },
 ];
 
-const valueProps = [
-    { icon: <StarIcon />, text: 'We Value Your Feedback' },
-    { icon: <ShieldCheckIcon />, text: 'Trained Professionals' },
-    { icon: <HeadsetIcon />, text: 'Dedicated Support' },
-    { icon: <BadgeCheckIcon />, text: 'Verified Experts' },
-];
-
 const HeaderLogo = () => (
     <div>
         <span className="text-black text-2xl font-bold">Insta</span>
@@ -51,7 +44,7 @@ export default function HomePage({ setPage, currentUser, orders, viewServiceDeta
     const recentBookings = orders.filter(order => new Date(order.date) < new Date()).slice(0, 5);
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto space-y-8 pb-24">
             <header className="flex justify-between items-center">
                 <HeaderLogo />
                 <button onClick={() => setPage('account')} className="p-2 bg-white rounded-full shadow border"><UserIcon /></button>
@@ -73,17 +66,6 @@ export default function HomePage({ setPage, currentUser, orders, viewServiceDeta
                 <h2 className="text-lg font-bold text-gray-800 mb-4">Categories</h2>
                 {/* This now passes the correct Service type */}
                 <ServiceGrid services={services} onServiceClick={viewServiceDetail} />
-            </div>
-
-            <div>
-                <div className="flex overflow-x-auto space-x-4 pb-4">
-                    {valueProps.map(prop => (
-                        <div key={prop.text} className="flex-shrink-0 w-40 flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-md text-center">
-                            {prop.icon}
-                            <p className="mt-2 text-sm font-semibold text-gray-700">{prop.text}</p>
-                        </div>
-                    ))}
-                </div>
             </div>
 
             {recentBookings.length > 0 && (

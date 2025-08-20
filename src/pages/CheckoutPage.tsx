@@ -2,20 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import SubPageHeader from '../components/common/SubPageHeader';
+import { UpiIcon,PaymentGraphic, CardIcon } from '../components/common/Icons';
 
-
-// --- Placeholder Icons (Replace with your actual icon components) ---
-const UpiIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V18M8.5 14.5l-1.5 1.5M15.5 14.5l1.5 1.5M12 11v3M5 18h14M4 11a8 8 0 1 1 16 0M4 11h16"/></svg>
-);
-const CardIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-);
-const PaymentGraphic = () => (
-    <svg className="w-24 h-24 mx-auto text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-    </svg>
-);
 // --- End Placeholder Icons ---
 
 
