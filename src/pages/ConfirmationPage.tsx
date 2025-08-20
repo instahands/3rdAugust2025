@@ -1,6 +1,4 @@
 // src/pages/ConfirmationPage.tsx
-
-import React from 'react';
 import { CalendarIcon, ClockIcon, LocationPinIcon } from '../components/common/Icons';
 
 

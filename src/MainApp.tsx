@@ -1,8 +1,8 @@
 // src/MainApp.tsx (FINAL VERSION WITH CORRECTED AUTH LOGIC)
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { User, Session } from '@supabase/supabase-js';
+import { User} from '@supabase/supabase-js';
 
 // --- Import ALL pages and components needed ---
 import HomePage from './pages/HomePage';
@@ -17,7 +17,7 @@ import ServiceDetailModal from './components/home/ServiceDetailModal';
 import AddAddressModal from './components/account/AddAddressModal';
 import { HomeIcon, ListIcon, AccountIcon } from './components/common/Icons';
 
-import { isLocationInServiceArea, LocationCoords } from './locationService';
+import { isLocationInServiceArea} from './locationService';
 import { Address, Service } from './types';
 
 

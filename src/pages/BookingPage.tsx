@@ -131,17 +131,18 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
                     initialLocation={userLocation}
                     onConfirm={(addressString: string) => {
                         const parts = addressString.split(',').map(p => p.trim());
-                        // Create a complete Address object that matches your type definition
+                        
+                        // --- MODIFIED: Create a complete Address object with all required fields ---
                         const newAddress: Address = {
                             id: Date.now(), // Use a timestamp for a temporary numeric ID
                             address_type: 'Pinned Location',
                             street_address: parts[0] || 'N/A',
                             city: parts[1] || 'Bhilai',
-                            state: parts[2] || 'Chhattisgarh',
-                            postal_code: parts[3] || '490001',
-                            phone_number: currentUser?.phone || '', // Add phone number
+                            state: 'Chhattisgarh', // Add the missing 'state' property
+                            postal_code: parts[parts.length - 1] || '490001', // Guess postal code from the end
+                            phone_number: currentUser?.phone || '', // Add the missing 'phone_number'
                         };
-                        setSelectedAddress(newAddress);
+                        setSelectedAddress(newAddress); // This will now work without errors
                         setIsMapPickerOpen(false);
                     }}
                     onCancel={() => setIsMapPickerOpen(false)}

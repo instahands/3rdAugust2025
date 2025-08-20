@@ -10,10 +10,17 @@ export interface Address {
     phone_number: string;
 }
 
+// --- MODIFIED: Expanded the Service interface ---
 export interface Service {
     name: string;
+    manpowerType: string; // Added from HomePage
+    color: string;        // Added from HomePage
     price: number;
-    // ... other service properties from HomePage.tsx
+    description: string;  // Added from HomePage
+    imageUrl: string;     // Added from HomePage
+    trainedTo: string[];  // Added from HomePage
+    needs: string[];      // Added from HomePage
+    excluded: string[];   // Added from HomePage
 }
 
 export interface LocationCoords {

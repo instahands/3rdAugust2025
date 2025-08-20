@@ -1,6 +1,4 @@
-// src/App.tsx (UPDATED)
-
-import React from 'react';
+// src/App.tsx (UPDATED
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import MainApp from "./MainApp"; // This now correctly imports from MainApp.tsx

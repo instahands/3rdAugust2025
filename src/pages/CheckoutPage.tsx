@@ -1,6 +1,6 @@
 // src/pages/CheckoutPage.tsx
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import SubPageHeader from '../components/common/SubPageHeader';
 
 

@@ -1,13 +1,31 @@
-// src/pages/OrdersPage.tsx
+// src/pages/OrdersPage.tsx (CORRECTED)
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import OrderCard from '../components/orders/OrderCard'; // Import the new component
+import OrderCard from '../components/orders/OrderCard';
 
-export default function OrdersPage({ setPage, currentPage }) {
+// --- NEW: Define the Order type ---
+interface Order {
+    id: string;
+    date: string;
+    manpowerType: string;
+    subscriptionType: string;
+    status: string;
+    trackingStatus: string;
+    address: string;
+}
+
+// --- NEW: Define the props for the page ---
+interface OrdersPageProps {
+    setPage: (page: string) => void;
+    currentPage: string;
+}
+
+export default function OrdersPage({ setPage, currentPage }: OrdersPageProps) {
     const [activeTab, setActiveTab] = useState('upcoming');
-    const [upcomingOrders, setUpcomingOrders] = useState([]);
-    const [pastOrders, setPastOrders] = useState([]);
+    // --- MODIFIED: Explicitly typed the state ---
+    const [upcomingOrders, setUpcomingOrders] = useState<Order[]>([]);
+    const [pastOrders, setPastOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -24,19 +42,20 @@ export default function OrdersPage({ setPage, currentPage }) {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
+                // No changes needed here, TypeScript now understands the types
                 setUpcomingOrders(data.filter(order => new Date(order.date) >= today));
                 setPastOrders(data.filter(order => new Date(order.date) < today));
             }
             setLoading(false);
         };
         
-        // Only fetch when this page is active
         if (currentPage === 'orders') {
             fetchOrders();
         }
     }, [currentPage]);
 
-    const OrderList = ({ orders, isUpcoming }) => {
+    // --- NEW: Typed props for OrderList ---
+    const OrderList = ({ orders, isUpcoming }: { orders: Order[], isUpcoming: boolean }) => {
         if (orders.length === 0) {
             return (
                 <div className="text-center py-10 bg-white rounded-lg shadow mt-4">
@@ -51,7 +70,8 @@ export default function OrdersPage({ setPage, currentPage }) {
         }
         return (
             <div className="space-y-4 mt-4">
-                {orders.map(order => <OrderCard key={order.id} order={order} isUpcoming={isUpcoming} />)}
+                {/* TypeScript now knows 'order' is of type Order */}
+                {orders.map((order: Order) => <OrderCard key={order.id} order={order} isUpcoming={isUpcoming} />)}
             </div>
         );
     };

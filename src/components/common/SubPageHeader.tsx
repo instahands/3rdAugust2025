@@ -1,9 +1,9 @@
-// src/components/common/SubPageHeader.tsx
+// src/components/common/SubPageHeader.tsx (CORRECTED)
 
-import React from 'react';
 import { ArrowLeftIcon } from './Icons';
 
-const SubPageHeader = ({ title, onBack }) => (
+// --- NEW: Typed the component props ---
+const SubPageHeader = ({ title, onBack }: { title: string, onBack: () => void }) => (
     <div className="relative flex items-center justify-center mb-6">
         <button onClick={onBack} className="absolute left-0 p-2">
             <ArrowLeftIcon />

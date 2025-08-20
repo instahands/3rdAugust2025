@@ -1,10 +1,17 @@
-// src/components/account/ProfileDetailsPage.tsx
+// src/components/account/ProfileDetailsPage.tsx (CORRECTED)
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import SubPageHeader from '../common/SubPageHeader';
+import { User } from '@supabase/supabase-js'; // --- NEW: Import User type
 
-export default function ProfileDetailsPage({ setPage, currentUser }) {
+// --- NEW: Typed props for the page ---
+interface ProfileDetailsPageProps {
+    setPage: (page: string) => void;
+    currentUser: User | null;
+}
+
+export default function ProfileDetailsPage({ setPage, currentUser }: ProfileDetailsPageProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [isChangingPhone, setIsChangingPhone] = useState(false);
     const [phone, setPhone] = useState('');
@@ -14,13 +21,15 @@ export default function ProfileDetailsPage({ setPage, currentUser }) {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [fullName, setFullName] = useState(currentUser?.user_metadata?.name || '');
-    const [email, setEmail] = useState(currentUser?.email || '');
+    // --- MODIFIED: Removed unused setEmail ---
+    const [email] = useState(currentUser?.email || '');
 
     const handleSaveProfile = async () => {
         setLoading(true);
         setError('');
         setSuccess('');
-        const { data, error: updateError } = await supabase.auth.updateUser({
+        // --- MODIFIED: Removed unused 'data' variable ---
+        const { error: updateError } = await supabase.auth.updateUser({
             data: { name: fullName }
         });
 

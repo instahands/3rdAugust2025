@@ -1,11 +1,22 @@
-// src/components/account/SavedAddressesPage.tsx
+// src/components/account/SavedAddressesPage.tsx (CORRECTED)
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import SubPageHeader from '../common/SubPageHeader';
+import { Address } from '../../types'; // --- NEW: Import Address type
+import { User } from '@supabase/supabase-js'; // --- NEW: Import User type
 
-export default function SavedAddressesPage({ setPage, currentUser, openAddAddressModal, setEditingAddress }) {
-    const [addresses, setAddresses] = useState([]);
+// --- NEW: Define Props interface ---
+interface SavedAddressesPageProps {
+    setPage: (page: string) => void;
+    currentUser: User | null;
+    openAddAddressModal: () => void;
+    setEditingAddress: (address: Address | null) => void;
+}
+
+export default function SavedAddressesPage({ setPage, currentUser, openAddAddressModal, setEditingAddress }: SavedAddressesPageProps) {
+    // --- MODIFIED: Explicitly typed the state with Address[] ---
+    const [addresses, setAddresses] = useState<Address[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchAddresses = async () => {
@@ -13,7 +24,10 @@ export default function SavedAddressesPage({ setPage, currentUser, openAddAddres
         setLoading(true);
         const { data, error } = await supabase.from('addresses').select('*').eq('user_id', currentUser.id).order('created_at');
         if (error) { console.error("Error fetching addresses:", error); }
-        else if (data) { setAddresses(data); }
+        else if (data) { 
+            // TypeScript now understands that 'data' is compatible with 'Address[]'
+            setAddresses(data); 
+        }
         setLoading(false);
     };
 
@@ -21,7 +35,8 @@ export default function SavedAddressesPage({ setPage, currentUser, openAddAddres
         fetchAddresses();
     }, [currentUser]);
 
-    const handleDelete = async (addressId) => {
+    // --- MODIFIED: Added type for addressId ---
+    const handleDelete = async (addressId: number) => {
         if (window.confirm("Are you sure you want to delete this address?")) {
             const { error } = await supabase.from('addresses').delete().eq('id', addressId);
             if (error) {
@@ -32,7 +47,8 @@ export default function SavedAddressesPage({ setPage, currentUser, openAddAddres
         }
     };
 
-    const handleEdit = (address) => {
+    // --- MODIFIED: Added type for address ---
+    const handleEdit = (address: Address) => {
         setEditingAddress(address);
         openAddAddressModal();
     };
@@ -43,7 +59,8 @@ export default function SavedAddressesPage({ setPage, currentUser, openAddAddres
             {loading ? ( <p className="text-center text-gray-500 py-8">Loading addresses...</p> ) : (
                 <div className="space-y-4">
                     {addresses.length > 0 ? (
-                        addresses.map(addr => (
+                        // --- MODIFIED: Added type for addr ---
+                        addresses.map((addr: Address) => (
                             <div key={addr.id} className="bg-white p-4 rounded-xl shadow">
                                 <h3 className="font-bold">{addr.address_type}</h3>
                                 <p className="text-gray-600">{`${addr.street_address}, ${addr.city}, ${addr.state} ${addr.postal_code}`}</p>

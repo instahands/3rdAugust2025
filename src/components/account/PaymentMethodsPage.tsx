@@ -1,9 +1,9 @@
-// src/components/account/PaymentMethodsPage.tsx
+// src/components/account/PaymentMethodsPage.tsx (CORRECTED)
 
-import React from 'react';
 import SubPageHeader from '../common/SubPageHeader';
 
-export default function PaymentMethodsPage({ setPage }) {
+// --- NEW: Typed props for the page ---
+export default function PaymentMethodsPage({ setPage }: { setPage: (page: string) => void }) {
     return (
         <div className="max-w-2xl mx-auto">
             <SubPageHeader title="Payment Methods" onBack={() => setPage('account')} />

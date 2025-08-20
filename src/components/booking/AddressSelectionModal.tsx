@@ -1,10 +1,9 @@
-// src/components/booking/AddressSelectionModal.tsx
+// src/components/booking/AddressSelectionModal.tsx (CORRECTED)
 
-import React from 'react';
 import { XIcon } from '../common/Icons';
+import { Address } from '../../types'; // --- NEW: Import the correct Address type ---
 
-// --- TYPE DEFINITIONS ---
-interface Address { id: number; address_type: string; street_address: string; city: string; }
+// --- The props interface now uses the imported Address type ---
 interface AddressSelectionModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -31,6 +30,7 @@ export default function AddressSelectionModal({ isOpen, onClose, addresses, onSe
                                 <div className="mt-1 w-5 h-5 rounded-full border-2 border-gray-400 flex-shrink-0"></div>
                                 <div>
                                     <p className="font-semibold">{addr.address_type}</p>
+                                    {/* Now it can safely access all properties */}
                                     <p className="text-sm text-gray-600">{`${addr.street_address}, ${addr.city}`}</p>
                                 </div>
                             </div>

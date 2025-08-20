@@ -1,9 +1,17 @@
-// src/components/home/ServiceDetailModal.tsx
+// src/components/home/ServiceDetailModal.tsx (CORRECTED)
 
-import React from 'react';
+
 import { XIcon, CheckCircleIcon, XCircleIcon } from '../common/Icons';
+import { Service } from '../../types'; // --- NEW: Import the Service type ---
 
-function ServiceDetailModal({ service, onClose, startBooking }) {
+// --- NEW: Typed the component props ---
+interface ServiceDetailModalProps {
+    service: Service | null;
+    onClose: () => void;
+    startBooking: (service: Service) => void;
+}
+
+export default function ServiceDetailModal({ service, onClose, startBooking }: ServiceDetailModalProps) {
     if (!service) return null;
 
     return (
@@ -25,7 +33,8 @@ function ServiceDetailModal({ service, onClose, startBooking }) {
                     <div className="p-4 bg-gray-50 rounded-lg">
                         <h3 className="text-lg font-bold text-gray-800 mb-3">The expert is trained to</h3>
                         <ul className="space-y-2">
-                            {service.trainedTo.map(item => (
+                            {/* --- MODIFIED: Added key and type for item --- */}
+                            {service.trainedTo.map((item: string) => (
                                 <li key={item} className="flex items-start">
                                     <CheckCircleIcon />
                                     <span className="ml-3 text-gray-700">{item}</span>
@@ -37,7 +46,8 @@ function ServiceDetailModal({ service, onClose, startBooking }) {
                     <div className="p-4 bg-gray-50 rounded-lg">
                         <h3 className="text-lg font-bold text-gray-800 mb-3">What we need from you</h3>
                         <ul className="space-y-2">
-                            {service.needs.map(item => (
+                            {/* --- MODIFIED: Added key and type for item --- */}
+                            {service.needs.map((item: string) => (
                                 <li key={item} className="flex items-start">
                                     <CheckCircleIcon />
                                     <span className="ml-3 text-gray-700">{item}</span>
@@ -49,7 +59,8 @@ function ServiceDetailModal({ service, onClose, startBooking }) {
                     <div className="p-4 bg-gray-50 rounded-lg">
                         <h3 className="text-lg font-bold text-gray-800 mb-3">Service Excluded</h3>
                         <ul className="space-y-2">
-                            {service.excluded.map(item => (
+                            {/* --- MODIFIED: Added key and type for item --- */}
+                            {service.excluded.map((item: string) => (
                                 <li key={item} className="flex items-start">
                                     <XCircleIcon />
                                     <span className="ml-3 text-gray-700">{item}</span>
@@ -77,5 +88,3 @@ function ServiceDetailModal({ service, onClose, startBooking }) {
         </div>
     );
 }
-
-export default ServiceDetailModal;

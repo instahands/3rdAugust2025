@@ -1,15 +1,17 @@
-// src/components/account/HelpCenterPage.tsx
+// src/components/account/HelpCenterPage.tsx (CORRECTED)
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import SubPageHeader from '../common/SubPageHeader';
 import { ChevronRightIcon } from '../common/Icons';
 
-const FAQItem = ({ question, answer }) => {
+// --- NEW: Typed the props for FAQItem ---
+const FAQItem = ({ question, answer }: { question: string, answer: string }) => {
     const [isOpen, setIsOpen] = useState(false);
     return (
         <div className="border-b">
             <button onClick={() => setIsOpen(!isOpen)} className="w-full p-4 flex justify-between items-center text-left">
                 <span className="font-medium text-gray-800">{question}</span>
+                {/* This will be fixed in Icons.tsx */}
                 <ChevronRightIcon className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
             </button>
             {isOpen && <div className="p-4 pt-0 text-gray-600 bg-gray-50">{answer}</div>}
@@ -17,7 +19,8 @@ const FAQItem = ({ question, answer }) => {
     );
 };
 
-export default function HelpCenterPage({ setPage }) {
+// --- NEW: Typed the props for the page ---
+export default function HelpCenterPage({ setPage }: { setPage: (page: string) => void }) {
     return (
         <div className="max-w-2xl mx-auto">
             <SubPageHeader title="Help Center" onBack={() => setPage('account')} />

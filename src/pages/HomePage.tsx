@@ -1,45 +1,27 @@
-// src/pages/HomePage.tsx (FINAL CORRECTED VERSION)
+// src/pages/HomePage.tsx (CORRECTED)
 
 import { User } from '@supabase/supabase-js';
-
+// This now imports the single, correct Service type
+import { Service } from '../types'; 
 
 // Import reusable components
 import { UserIcon, SearchIcon, StarIcon, ShieldCheckIcon, HeadsetIcon, BadgeCheckIcon } from '../components/common/Icons';
 import AdCarousel from '../components/home/AdCarousel';
 import ServiceGrid from '../components/home/ServiceGrid';
-// Note: We no longer import or render ServiceDetailModal from here. MainApp will handle it.
 
-// --- TYPE DEFINITIONS ---
-interface Service {
-    name: string;
-    manpowerType: string;
-    color: string;
-    price: number;
-    description: string;
-    imageUrl: string;
-    trainedTo: string[];
-    needs: string[];
-    excluded: string[];
-}
+// --- REMOVED: Local interface declarations ---
+// The local Service and Order interfaces have been removed to avoid conflicts.
 
-interface Order {
-    id: string;
-    date: string;
-    manpowerType: string;
-    subscriptionType: string;
-}
-
-// --- UPDATED PROPS INTERFACE ---
-// It now expects functions from its parent to handle clicks
+// --- PROPS INTERFACE USING IMPORTED TYPES ---
 interface HomePageProps {
     setPage: (page: string) => void;
     currentUser: User | null;
-    orders: Order[];
-    viewServiceDetail: (service: Service) => void; // Prop to open the details modal
-    startBooking: (service: Service) => void;      // Prop to start the booking flow
+    orders: any[]; // Using 'any[]' for orders as its full shape isn't defined globally yet
+    viewServiceDetail: (service: Service) => void;
+    startBooking: (service: Service) => void;
 }
 
-// --- FULL LIST OF SERVICES (as you've already updated) ---
+// --- Service data remains the same ---
 const services: Service[] = [
     { name: 'Home Cleaning', manpowerType: 'Home Cleaning', color: 'bg-blue-500', price: 249, description: 'Ideal for flats, villas, PGs, rentals.', imageUrl: 'https://images.pexels.com/photos/4107120/pexels-photo-4107120.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop', trainedTo: ['Full Home Deep Cleaning', 'Kitchen Deep Clean', 'Bathroom Cleaning & Sanitization', 'Bedroom Cleaning', 'Sofa, Carpet & Mattress Shampooing'], needs: ['Access to water & electricity', 'Space to work'], excluded: ['Heavy furniture moving', 'Pest control'] },
     { name: 'Pack & Shift Help', manpowerType: 'Pack & Shift Help', color: 'bg-orange-500', price: 199, description: 'Heavy ka stress? Helping Hands is here!', imageUrl: 'https://images.pexels.com/photos/4246120/pexels-photo-4246120.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop', trainedTo: ['Full House Shifting Support', 'Packing, Loading, Unloading', 'Furniture Rearrangement', 'Office Setup or Move', 'Event Setup & Breakdown', 'Packing Support Only', 'Loading/Unloading Help', '2Hr/4Hr Labour Booking'], needs: ['Clear instructions on items to be moved', 'Access to both source and destination points', 'Parking space for vehicle (if applicable)'], excluded: ['Transportation vehicle (unless specified)', 'Insurance for valuables', 'Packing materials (unless specified)'] },
@@ -64,7 +46,7 @@ const HeaderLogo = () => (
     </div>
 );
 
-// --- SIMPLIFIED HOMEPAGE COMPONENT ---
+// --- Component remains the same, but now uses the correct types ---
 export default function HomePage({ setPage, currentUser, orders, viewServiceDetail, startBooking }: HomePageProps) {
     const recentBookings = orders.filter(order => new Date(order.date) < new Date()).slice(0, 5);
 
@@ -89,7 +71,7 @@ export default function HomePage({ setPage, currentUser, orders, viewServiceDeta
 
             <div>
                 <h2 className="text-lg font-bold text-gray-800 mb-4">Categories</h2>
-                {/* Now calls the function from props */}
+                {/* This now passes the correct Service type */}
                 <ServiceGrid services={services} onServiceClick={viewServiceDetail} />
             </div>
 
@@ -113,7 +95,6 @@ export default function HomePage({ setPage, currentUser, orders, viewServiceDeta
                                 <h3 className="font-bold text-gray-800">{order.manpowerType}</h3>
                                 <p className="text-sm text-gray-500">{order.subscriptionType}</p>
                                 <p className="text-sm text-gray-500 mt-2">Last on: {new Date(order.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                                {/* Now calls the startBooking function from props */}
                                 <button onClick={() => startBooking(services.find(s => s.manpowerType === order.manpowerType)!)} className="mt-4 w-full py-2 text-white bg-green-600 rounded-lg text-sm font-bold">
                                     Re-Book
                                 </button>
@@ -122,7 +103,6 @@ export default function HomePage({ setPage, currentUser, orders, viewServiceDeta
                     </div>
                 </div>
             )}
-            {/* The ServiceDetailModal is no longer rendered here */}
         </div>
     );
 }

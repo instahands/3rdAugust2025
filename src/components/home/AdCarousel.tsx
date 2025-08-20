@@ -1,6 +1,6 @@
 // src/components/home/AdCarousel.tsx
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 const AdCarousel = () => {
     const ads = [

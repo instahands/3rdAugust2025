@@ -1,8 +1,8 @@
-// src/pages/AccountPage.tsx
+// src/pages/AccountPage.tsx (CORRECTED)
 
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
-
+import { useState } from 'react';
+import { User } from '@supabase/supabase-js';
+import { Address } from '../types'; // --- NEW: Import Address type
 import { UserIcon, ProfileIcon, AddressIcon, PaymentIcon, NotificationIcon, HelpIcon, ChevronRightIcon } from '../components/common/Icons';
 
 // Import the sub-pages
@@ -13,8 +13,15 @@ import PaymentMethodsPage from '../components/account/PaymentMethodsPage';
 import NotificationsPage from '../components/account/NotificationsPage';
 import HelpCenterPage from '../components/account/HelpCenterPage';
 
+// --- Interfaces and AccountMenu component remain the same ---
+interface AccountMenuProps {
+    setPage: (page: string) => void;
+    currentUser: User | null;
+    handleLogout: () => void;
+}
 
-const AccountMenu = ({ setPage, currentUser, handleLogout }) => {
+const AccountMenu = ({ setPage, currentUser, handleLogout }: AccountMenuProps) => {
+    // ... menu code
     const menuItems = [
         { name: 'Profile Details', icon: <ProfileIcon />, page: 'profileDetails' },
         { name: 'Saved Addresses', icon: <AddressIcon />, page: 'savedAddresses' },
@@ -58,16 +65,21 @@ const AccountMenu = ({ setPage, currentUser, handleLogout }) => {
 };
 
 
-export default function AccountPage({ setPage: setMainPage, currentUser, handleLogout }) {
-    // This state now controls the sub-page within the Account section
+interface AccountPageProps {
+    setPage: (page: string) => void; 
+    currentUser: User | null;
+    handleLogout: () => void;
+}
+
+export default function AccountPage({ currentUser, handleLogout }: AccountPageProps) {
     const [subPage, setSubPage] = useState('account'); 
     
-    // State for the address modal
     const [isAddressModalOpen, setAddressModalOpen] = useState(false);
-    const [editingAddress, setEditingAddress] = useState(null);
+    // --- MODIFIED: Explicitly set the type for the state ---
+    const [editingAddress, setEditingAddress] = useState<Address | null>(null);
 
     const handleOpenAddAddressModal = () => {
-        setEditingAddress(null); // Clear any previous edits
+        setEditingAddress(null);
         setAddressModalOpen(true);
     };
 
@@ -80,6 +92,7 @@ export default function AccountPage({ setPage: setMainPage, currentUser, handleL
             case 'profileDetails':
                 return <ProfileDetailsPage setPage={setSubPage} currentUser={currentUser} />;
             case 'savedAddresses':
+                // The type of setEditingAddress now correctly matches the prop requirement
                 return <SavedAddressesPage setPage={setSubPage} currentUser={currentUser} openAddAddressModal={handleOpenAddAddressModal} setEditingAddress={setEditingAddress} />;
             case 'paymentMethods':
                 return <PaymentMethodsPage setPage={setSubPage} />;
@@ -99,7 +112,6 @@ export default function AccountPage({ setPage: setMainPage, currentUser, handleL
                 isOpen={isAddressModalOpen}
                 onClose={handleCloseAddressModal}
                 onSave={() => {
-                    // We might need to refresh addresses here in a real app
                     handleCloseAddressModal();
                 }}
                 currentUser={currentUser}

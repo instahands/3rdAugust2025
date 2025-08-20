@@ -1,9 +1,10 @@
-// src/components/account/NotificationsPage.tsx
+// src/components/account/NotificationsPage.tsx (CORRECTED)
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import SubPageHeader from '../common/SubPageHeader';
 
-const Toggle = ({ label, isEnabled, onToggle }) => (
+// --- NEW: Typed props for Toggle component ---
+const Toggle = ({ label, isEnabled, onToggle }: { label: string, isEnabled: boolean, onToggle: () => void }) => (
     <div className="flex justify-between items-center p-4">
         <span className="font-medium text-gray-700">{label}</span>
         <button 
@@ -15,14 +16,16 @@ const Toggle = ({ label, isEnabled, onToggle }) => (
     </div>
 );
 
-export default function NotificationsPage({ setPage }) {
+// --- NEW: Typed props for the page ---
+export default function NotificationsPage({ setPage }: { setPage: (page: string) => void }) {
     const [toggles, setToggles] = useState({
         orderUpdates: true,
         promotions: true,
         reminders: false,
     });
 
-    const handleToggle = (key) => {
+    // --- NEW: Typed the key parameter ---
+    const handleToggle = (key: keyof typeof toggles) => {
         setToggles(prev => ({...prev, [key]: !prev[key]}));
     };
     

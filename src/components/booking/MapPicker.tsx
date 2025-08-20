@@ -74,13 +74,15 @@ const MapPicker: React.FC<MapPickerProps> = ({
 
       if (window.google && (window.google.maps as any).marker && !markerRef.current) {
         const { AdvancedMarkerElement } = (window.google.maps as any).marker;
-        markerRef.current = new AdvancedMarkerElement({
+        
+        // --- MODIFIED: Create marker first, add listener, THEN assign to ref ---
+        const marker = new AdvancedMarkerElement({
           map,
           position: currentLocation,
           gmpDraggable: true,
         });
 
-        markerRef.current.addListener("dragend", (e: google.maps.MapMouseEvent) => {
+        marker.addListener("dragend", (e: google.maps.MapMouseEvent) => {
           const newLat = e.latLng?.lat();
           const newLng = e.latLng?.lng();
           if (newLat !== undefined && newLng !== undefined) {
@@ -89,10 +91,13 @@ const MapPicker: React.FC<MapPickerProps> = ({
             getAddressFromCoords(newLocation);
           }
         });
+
+        markerRef.current = marker; // Assign to ref at the end
       }
     },
     [getAddressFromCoords, currentLocation]
   );
+
 
   useEffect(() => {
      if (markerRef.current) {

@@ -2,7 +2,7 @@
 
 import React from 'react';
 // --- NEW: Import the icons from the central file ---
-import { CalendarIcon, ClockIcon, LocationPinIcon } from '../common/Icons';
+import { CalendarIcon, LocationPinIcon } from '../common/Icons';
 
 const ServiceTracker = ({ status }: { status: string }) => {
     const stages = ['Booked', 'Assigned', 'On the Way', 'Completed'];
