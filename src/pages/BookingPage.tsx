@@ -1,4 +1,4 @@
-// src/pages/BookingPage.tsx (UPDATED WITH TIME SLOT VALIDATION)
+// src/pages/BookingPage.tsx (FINALIZED WITH ALL VALIDATIONS)
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
@@ -44,6 +44,21 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
     const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
     const [userLocation, setUserLocation] = useState<LocationCoords | null>(null);
 
+    const timeSlots: { [key: string]: string[] } = { Morning: ['09:00 AM', '10:00 AM', '11:00 AM'], Afternoon: ['02:00 PM', '03:00 PM', '04:00 PM'] };
+    const getFormattedDate = (offset = 0) => { const date = new Date(); date.setDate(date.getDate() + offset); return date.toISOString().split('T')[0]; };
+
+    const isSlotInThePast = (slot: string, date: string): boolean => {
+        const today = new Date();
+        if (date !== today.toISOString().split('T')[0]) { return false; }
+        const currentHour = today.getHours();
+        const hourString = slot.split(':')[0];
+        const period = slot.split(' ')[1];
+        let slotHour = parseInt(hourString, 10);
+        if (period === 'PM' && slotHour !== 12) slotHour += 12;
+        if (period === 'AM' && slotHour === 12) slotHour = 0;
+        return slotHour <= currentHour;
+    };
+
     useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((position) => {
@@ -60,10 +75,27 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
         };
         fetchAddresses();
     }, [currentUser, dataVersion]);
-    
+
     const handleDataChange = (field: string, value: any) => {
         setBookingData(prev => ({ ...prev, [field]: value }));
     };
+
+    // --- Smart time slot selection logic ---
+    useEffect(() => {
+        if (frequency !== 'daily') return;
+        if (bookingData.date === getFormattedDate(0) && isSlotInThePast(bookingData.timeSlot, bookingData.date)) {
+            const allSlots = [...timeSlots.Morning, ...timeSlots.Afternoon];
+            const firstAvailableSlot = allSlots.find(slot => !isSlotInThePast(slot, bookingData.date));
+            if (firstAvailableSlot) {
+                handleDataChange('timeSlot', firstAvailableSlot);
+                setSelectedPeriod(timeSlots.Afternoon.includes(firstAvailableSlot) ? 'Afternoon' : 'Morning');
+            } else {
+                handleDataChange('date', getFormattedDate(1));
+                handleDataChange('timeSlot', timeSlots.Morning[0]);
+                setSelectedPeriod('Morning');
+            }
+        }
+    }, [bookingData.date, frequency]);
 
     const handleProceed = () => {
         const finalBookingData = { ...bookingData, address: selectedAddress, service, frequency };
@@ -79,36 +111,12 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
     const finalPrice = calculatePrice();
     
     const durations = [60, 90, 120, 150, 180];
-    const timeSlots: { [key: string]: string[] } = { Morning: ['09:00 AM', '10:00 AM', '11:00 AM'], Afternoon: ['02:00 PM', '03:00 PM', '04:00 PM'] };
-    const getFormattedDate = (offset = 0) => { const date = new Date(); date.setDate(date.getDate() + offset); return date.toISOString().split('T')[0]; };
 
-    // --- HELPER FUNCTION TO CHECK IF A SLOT IS IN THE PAST FOR TODAY ---
-    const isSlotInThePast = (slot: string, date: string): boolean => {
-        const today = new Date();
-        // If the selected date is not today, the slot cannot be in the past.
-        if (date !== today.toISOString().split('T')[0]) {
-            return false;
-        }
-        const currentHour = today.getHours();
-        const hourString = slot.split(':')[0];
-        const period = slot.split(' ')[1];
-        let slotHour = parseInt(hourString, 10);
-        if (period === 'PM' && slotHour !== 12) slotHour += 12;
-        if (period === 'AM' && slotHour === 12) slotHour = 0; // Midnight case
-        // Slot is in the past if its hour is less than or equal to the current hour.
-        return slotHour <= currentHour;
-    };
-
-    // --- UPDATED: Validation logic now includes checking the time slot ---
+    // --- Final validation logic including the time slot check ---
     const isFormValid = 
         selectedAddress &&
         bookingData.workDescription.trim() !== '' &&
-        // Date fields must be valid
-        (frequency === 'daily' || 
-         (frequency === 'weekly' && bookingData.weeklyStartDate && bookingData.weeklyEndDate) ||
-         (frequency === 'monthly' && bookingData.selectedMonth)
-        ) &&
-        // For daily bookings, the selected time slot must not be in the past
+        (frequency === 'daily' || (frequency === 'weekly' && bookingData.weeklyStartDate && bookingData.weeklyEndDate) || (frequency === 'monthly' && bookingData.selectedMonth)) &&
         (frequency !== 'daily' || !isSlotInThePast(bookingData.timeSlot, bookingData.date));
 
     const renderDateSelection = () => {
@@ -130,7 +138,7 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
                     </div>
                 );
             case 'monthly':
-                return (
+                 return (
                     <div>
                         <h3 className="font-bold text-lg mb-3">Select Month <span className="text-red-500">*</span></h3>
                         <input type="month" value={bookingData.selectedMonth} onChange={e => handleDataChange('selectedMonth', e.target.value)} className="w-full p-2 border rounded-lg bg-gray-50" />
@@ -154,21 +162,7 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
     
     return (
         <>
-            {isMapPickerOpen && userLocation && (
-                <MapPicker
-                    initialLocation={userLocation}
-                    onConfirm={(addressString: string) => {
-                        const newAddress: Address = {
-                            id: Date.now(),
-                            address_type: 'Pinned Location',
-                            street_address: addressString.split(',')[0] || 'N/A', city: 'Bhilai', state: 'Chhattisgarh', postal_code: '490001', phone_number: currentUser?.phone || '',
-                        };
-                        setSelectedAddress(newAddress);
-                        setIsMapPickerOpen(false);
-                    }}
-                    onCancel={() => setIsMapPickerOpen(false)}
-                />
-            )}
+            {isMapPickerOpen && userLocation && ( <MapPicker initialLocation={userLocation} onConfirm={(addressString: string) => { const newAddress: Address = { id: Date.now(), address_type: 'Pinned Location', street_address: addressString.split(',')[0] || 'N/A', city: 'Bhilai', state: 'Chhattisgarh', postal_code: '490001', phone_number: currentUser?.phone || '', }; setSelectedAddress(newAddress); setIsMapPickerOpen(false); }} onCancel={() => setIsMapPickerOpen(false)} /> )}
 
             <div className="max-w-4xl mx-auto pb-32">
                 <SubPageHeader title={service.name} onBack={goBack} />
@@ -202,17 +196,9 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
                             {Object.keys(timeSlots).map(period => ( <button key={period} onClick={() => setSelectedPeriod(period)} className={`p-3 rounded-lg text-sm ${selectedPeriod === period ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>{period}</button>))}
                         </div>
                         <div className="grid grid-cols-4 gap-2">
-                            {timeSlots[selectedPeriod].map(slot => (
-                                <button 
-                                    key={slot} 
-                                    onClick={() => handleDataChange('timeSlot', slot)} 
-                                    disabled={isSlotInThePast(slot, bookingData.date)}
-                                    className={`p-3 rounded-lg text-sm transition-colors ${ isSlotInThePast(slot, bookingData.date) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : (bookingData.timeSlot === slot ? 'bg-green-600 text-white' : 'bg-gray-200 hover:bg-gray-300') }`}
-                                >
-                                    {slot}
-                                </button>
-                            ))}
+                            {timeSlots[selectedPeriod].map(slot => ( <button key={slot} onClick={() => handleDataChange('timeSlot', slot)} disabled={isSlotInThePast(slot, bookingData.date)} className={`p-3 rounded-lg text-sm transition-colors ${ isSlotInThePast(slot, bookingData.date) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : (bookingData.timeSlot === slot ? 'bg-green-600 text-white' : 'bg-gray-200 hover:bg-gray-300') }`} > {slot} </button> ))}
                         </div>
+                        <p className="text-xs text-center text-gray-500 mt-2">Time slots that have already passed for today are disabled.</p>
                     </div>
                      <div>
                         <h3 className="font-bold text-lg mb-3">Describe the work <span className="text-red-500">*</span></h3>
@@ -233,12 +219,7 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
                 </div>
             </div>
 
-             <AddressSelectionModal
-                isOpen={isAddressSelectorOpen} onClose={() => setIsAddressSelectorOpen(false)} addresses={addresses}
-                onSelectAddress={(address) => { setSelectedAddress(address); setIsAddressSelectorOpen(false); }}
-                onAddNew={openAddAddressModal}
-                onEdit={(address) => { setIsAddressSelectorOpen(false); onEditAddress(address); }}
-            />
+            <AddressSelectionModal isOpen={isAddressSelectorOpen} onClose={() => setIsAddressSelectorOpen(false)} addresses={addresses} onSelectAddress={(address) => { setSelectedAddress(address); setIsAddressSelectorOpen(false); }} onAddNew={openAddAddressModal} onEdit={(address) => { setIsAddressSelectorOpen(false); onEditAddress(address); }} />
         </>
     );
 }
