@@ -1,4 +1,4 @@
-// src/pages/BookingPage.tsx (FINALIZED WITH ALL VALIDATIONS)
+// src/pages/BookingPage.tsx (FINAL UX TWEAKS)
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
@@ -43,8 +43,13 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
     const [selectedPeriod, setSelectedPeriod] = useState('Morning');
     const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
     const [userLocation, setUserLocation] = useState<LocationCoords | null>(null);
-
-    const timeSlots: { [key: string]: string[] } = { Morning: ['09:00 AM', '10:00 AM', '11:00 AM'], Afternoon: ['02:00 PM', '03:00 PM', '04:00 PM'] };
+    
+    // FIX 1: Added "Evening" to the time slots object
+    const timeSlots: { [key: string]: string[] } = { 
+        Morning: ['09:00 AM', '10:00 AM', '11:00 AM'], 
+        Afternoon: ['02:00 PM', '03:00 PM', '04:00 PM'],
+        Evening: ['06:00 PM', '07:00 PM', '08:00 PM']
+    };
     const getFormattedDate = (offset = 0) => { const date = new Date(); date.setDate(date.getDate() + offset); return date.toISOString().split('T')[0]; };
 
     const isSlotInThePast = (slot: string, date: string): boolean => {
@@ -76,26 +81,27 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
         fetchAddresses();
     }, [currentUser, dataVersion]);
 
-    const handleDataChange = (field: string, value: any) => {
-        setBookingData(prev => ({ ...prev, [field]: value }));
-    };
-
-    // --- Smart time slot selection logic ---
+    // FIX 2: Updated useEffect to no longer switch to "Tomorrow" automatically
     useEffect(() => {
         if (frequency !== 'daily') return;
         if (bookingData.date === getFormattedDate(0) && isSlotInThePast(bookingData.timeSlot, bookingData.date)) {
-            const allSlots = [...timeSlots.Morning, ...timeSlots.Afternoon];
+            const allSlots = [...timeSlots.Morning, ...timeSlots.Afternoon, ...timeSlots.Evening];
             const firstAvailableSlot = allSlots.find(slot => !isSlotInThePast(slot, bookingData.date));
+
             if (firstAvailableSlot) {
                 handleDataChange('timeSlot', firstAvailableSlot);
-                setSelectedPeriod(timeSlots.Afternoon.includes(firstAvailableSlot) ? 'Afternoon' : 'Morning');
-            } else {
-                handleDataChange('date', getFormattedDate(1));
-                handleDataChange('timeSlot', timeSlots.Morning[0]);
-                setSelectedPeriod('Morning');
+                let period: "Morning" | "Afternoon" | "Evening" = "Morning";
+                if (timeSlots.Afternoon.includes(firstAvailableSlot)) period = "Afternoon";
+                if (timeSlots.Evening.includes(firstAvailableSlot)) period = "Evening";
+                setSelectedPeriod(period);
             }
+            // The else block that switched to "Tomorrow" has been removed.
         }
     }, [bookingData.date, frequency]);
+    
+    const handleDataChange = (field: string, value: any) => {
+        setBookingData(prev => ({ ...prev, [field]: value }));
+    };
 
     const handleProceed = () => {
         const finalBookingData = { ...bookingData, address: selectedAddress, service, frequency };
@@ -112,7 +118,6 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
     
     const durations = [60, 90, 120, 150, 180];
 
-    // --- Final validation logic including the time slot check ---
     const isFormValid = 
         selectedAddress &&
         bookingData.workDescription.trim() !== '' &&
@@ -120,6 +125,9 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
         (frequency !== 'daily' || !isSlotInThePast(bookingData.timeSlot, bookingData.date));
 
     const renderDateSelection = () => {
+        const todayString = getFormattedDate(0);
+        const currentMonthString = new Date().toISOString().slice(0, 7);
+        // ... (this function remains the same as the previous version)
         switch (frequency) {
             case 'weekly':
                 return (
@@ -128,11 +136,11 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-sm font-medium text-gray-500">Start Date</label>
-                                <input type="date" value={bookingData.weeklyStartDate} onChange={e => handleDataChange('weeklyStartDate', e.target.value)} className="w-full mt-1 p-2 border rounded-lg bg-gray-50" />
+                                <input type="date" value={bookingData.weeklyStartDate} onChange={e => handleDataChange('weeklyStartDate', e.target.value)} className="w-full mt-1 p-2 border rounded-lg bg-gray-50" min={todayString} />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-500">End Date</label>
-                                <input type="date" value={bookingData.weeklyEndDate} onChange={e => handleDataChange('weeklyEndDate', e.target.value)} className="w-full mt-1 p-2 border rounded-lg bg-gray-50" />
+                                <input type="date" value={bookingData.weeklyEndDate} onChange={e => handleDataChange('weeklyEndDate', e.target.value)} className="w-full mt-1 p-2 border rounded-lg bg-gray-50" min={bookingData.weeklyStartDate || todayString} />
                             </div>
                         </div>
                     </div>
@@ -141,7 +149,7 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
                  return (
                     <div>
                         <h3 className="font-bold text-lg mb-3">Select Month <span className="text-red-500">*</span></h3>
-                        <input type="month" value={bookingData.selectedMonth} onChange={e => handleDataChange('selectedMonth', e.target.value)} className="w-full p-2 border rounded-lg bg-gray-50" />
+                        <input type="month" value={bookingData.selectedMonth} onChange={e => handleDataChange('selectedMonth', e.target.value)} className="w-full p-2 border rounded-lg bg-gray-50" min={currentMonthString} />
                     </div>
                 );
             case 'daily':
@@ -154,7 +162,7 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
                             <button onClick={() => { handleDataChange('date', getFormattedDate(1)); setShowDatePicker(false); }} className={`p-3 rounded-lg text-sm ${bookingData.date === getFormattedDate(1) && !showDatePicker ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>Tomorrow</button>
                             <button onClick={() => setShowDatePicker(true)} className={`p-3 rounded-lg text-sm ${showDatePicker ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>Select Date</button>
                         </div>
-                        {showDatePicker && <input type="date" value={bookingData.date} onChange={e => handleDataChange('date', e.target.value)} className="w-full mt-3 p-2 border rounded-lg" />}
+                        {showDatePicker && <input type="date" value={bookingData.date} onChange={e => handleDataChange('date', e.target.value)} className="w-full mt-3 p-2 border rounded-lg" min={todayString} />}
                     </div>
                 );
         }
@@ -163,7 +171,6 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
     return (
         <>
             {isMapPickerOpen && userLocation && ( <MapPicker initialLocation={userLocation} onConfirm={(addressString: string) => { const newAddress: Address = { id: Date.now(), address_type: 'Pinned Location', street_address: addressString.split(',')[0] || 'N/A', city: 'Bhilai', state: 'Chhattisgarh', postal_code: '490001', phone_number: currentUser?.phone || '', }; setSelectedAddress(newAddress); setIsMapPickerOpen(false); }} onCancel={() => setIsMapPickerOpen(false)} /> )}
-
             <div className="max-w-4xl mx-auto pb-32">
                 <SubPageHeader title={service.name} onBack={goBack} />
                 <div className="bg-white p-6 rounded-xl shadow-lg space-y-6">
@@ -193,12 +200,12 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
                     <div>
                         <h3 className="font-bold text-lg mb-3">Select Time Slot <span className="text-red-500">*</span></h3>
                         <div className="grid grid-cols-3 gap-2 mb-4">
-                            {Object.keys(timeSlots).map(period => ( <button key={period} onClick={() => setSelectedPeriod(period)} className={`p-3 rounded-lg text-sm ${selectedPeriod === period ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>{period}</button>))}
+                            {Object.keys(timeSlots).map(period => ( <button key={period} onClick={() => setSelectedPeriod(period as "Morning" | "Afternoon" | "Evening")} className={`p-3 rounded-lg text-sm ${selectedPeriod === period ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>{period}</button>))}
                         </div>
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                             {timeSlots[selectedPeriod].map(slot => ( <button key={slot} onClick={() => handleDataChange('timeSlot', slot)} disabled={isSlotInThePast(slot, bookingData.date)} className={`p-3 rounded-lg text-sm transition-colors ${ isSlotInThePast(slot, bookingData.date) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : (bookingData.timeSlot === slot ? 'bg-green-600 text-white' : 'bg-gray-200 hover:bg-gray-300') }`} > {slot} </button> ))}
                         </div>
-                        <p className="text-xs text-center text-gray-500 mt-2">Time slots that have already passed for today are disabled.</p>
+                        {/* FIX 3: The explanatory message has been removed from the UI */}
                     </div>
                      <div>
                         <h3 className="font-bold text-lg mb-3">Describe the work <span className="text-red-500">*</span></h3>

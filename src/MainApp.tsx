@@ -1,4 +1,4 @@
-// src/MainApp.tsx (FINAL CORRECTED VERSION)
+// src/MainApp.tsx (FINAL CLEANUP)
 
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
@@ -14,7 +14,8 @@ import ProfileSetupPage from './pages/ProfileSetupPage';
 import ServiceDetailModal from './components/home/ServiceDetailModal';
 import AddAddressModal from './components/account/AddAddressModal';
 import { HomeIcon, ListIcon, AccountIcon } from './components/common/Icons';
-import { isLocationInServiceArea } from './locationService';
+// REMOVED: Unused import for isLocationInServiceArea
+// import { isLocationInServiceArea } from './locationService'; 
 import { Address, Service } from './types';
 
 const BottomNavBar = ({ setPage, currentPage }: { setPage: (page: string) => void, currentPage: string | null }) => {
@@ -50,7 +51,6 @@ export default function MainApp() {
     const [editingAddress, setEditingAddress] = useState<Address | null>(null);
     const [dataVersion, setDataVersion] = useState(0);
     const refreshData = () => setDataVersion(v => v + 1);
-    const [locationStatus, setLocationStatus] = useState<'checking' | 'available' | 'unavailable' | null>(null);
 
     useEffect(() => {
         const fetchOrders = async (userId: string) => {
@@ -58,21 +58,22 @@ export default function MainApp() {
             if (error) console.error('Error fetching orders:', error);
             else setOrders(data || []);
         };
-        const checkLocationAndSetPage = (user: User) => {
-            setLocationStatus('checking');
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const location = { lat: position.coords.latitude, lng: position.coords.longitude };
-                    const isAvailable = isLocationInServiceArea(location);
-                    setLocationStatus(isAvailable ? 'available' : 'unavailable');
-                    setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
-                },
-                () => {
-                    setLocationStatus('unavailable');
-                    setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
-                }
-            );
+        
+        const checkLocationAndSetPage = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    () => {
+                        setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
+                    },
+                    () => {
+                        setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
+                    }
+                );
+            } else {
+                setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
+            }
         };
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const user = session?.user ?? null;
             setCurrentUser(user);
@@ -81,11 +82,10 @@ export default function MainApp() {
                 if (!user.user_metadata?.name) {
                     setPage('profileSetup');
                 } else {
-                    checkLocationAndSetPage(user);
+                    checkLocationAndSetPage();
                 }
             } else {
                 setOrders([]);
-                setLocationStatus(null);
                 setPage('auth');
             }
         });
@@ -96,21 +96,15 @@ export default function MainApp() {
 
     const handleLogout = async () => { await supabase.auth.signOut(); };
 
-    // --- THIS IS THE CORRECTED addOrder FUNCTION ---
     const addOrder = async (newOrderData: any) => {
         if (!currentUser) return;
-
-        // The newOrderData object is now "flat" and no longer contains a nested 'service' object.
-        // This function correctly spreads the properties from newOrderData.
         const orderToInsert = {
             ...newOrderData, 
             user_id: currentUser.id,
             status: 'Pending',
             trackingStatus: 'Booked'
         };
-        
         const { data, error } = await supabase.from('orders').insert([orderToInsert]).select().single();
-
         if (error) {
             console.error("DATABASE ERROR:", error);
             alert("Sorry, there was an error booking your service.");

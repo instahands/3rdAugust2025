@@ -1,11 +1,10 @@
-// src/components/account/ReferralPage.tsx (ENHANCED)
+// src/components/account/ReferralPage.tsx (FINAL CORRECTED VERSION)
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { User } from '@supabase/supabase-js';
 import SubPageHeader from '../common/SubPageHeader';
 
-// --- A type to define the structure of a referral object ---
 interface Referral {
     id: string;
     status: 'pending' | 'completed';
@@ -18,10 +17,9 @@ interface ReferralPageProps {
     currentUser: User | null;
 }
 
-// --- A simple icon for the share button ---
 const ShareIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.368a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367-2.684zm0 9.368a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
     </svg>
 );
 
@@ -38,30 +36,28 @@ export default function ReferralPage({ setPage, currentUser }: ReferralPageProps
             }
 
             try {
-                // Fetch the user's referral code and their list of referrals at the same time
                 const [profileRes, referralsRes] = await Promise.all([
                     supabase
                         .from('profiles')
                         .select('referral_code')
                         .eq('user_id', currentUser.id)
-                        .single(),
+                        .maybeSingle(), // FIX 1: Use .maybeSingle() for more resilient code
                     supabase
                         .from('referrals')
                         .select(`
                             id,
                             status,
                             created_at,
-                            referred_user_profile:profiles(name)
-                        `)
+                            referred_user_profile:profiles!referred_user_id(name)
+                        `) // FIX 2: Explicitly state the foreign key 'referred_user_id' for the join
                         .eq('referrer_id', currentUser.id)
                 ]);
 
-                if (profileRes.error) throw profileRes.error;
+                if (profileRes.error && profileRes.error.code !== 'PGRST116') throw profileRes.error;
                 if (profileRes.data) setReferralCode(profileRes.data.referral_code);
 
                 if (referralsRes.error) throw referralsRes.error;
                 if (referralsRes.data) {
-                    // Format the data from Supabase to match our Referral type
                     const formattedReferrals = referralsRes.data.map((r: any) => ({
                         id: r.id,
                         status: r.status,
@@ -101,7 +97,6 @@ export default function ReferralPage({ setPage, currentUser }: ReferralPageProps
             <SubPageHeader title="Refer & Earn" onBack={() => setPage('account')} />
             
             <div className="space-y-6">
-                {/* --- Main Invite Card --- */}
                 <div className="bg-white p-6 rounded-xl shadow text-center">
                     {loading ? (
                         <p>Loading your referral code...</p>
@@ -122,7 +117,6 @@ export default function ReferralPage({ setPage, currentUser }: ReferralPageProps
                     )}
                 </div>
 
-                {/* --- How It Works Section --- */}
                 <div className="bg-white p-6 rounded-xl shadow">
                     <h3 className="text-lg font-bold text-gray-800 mb-3">How It Works</h3>
                     <ol className="space-y-3 text-gray-600">
@@ -132,7 +126,6 @@ export default function ReferralPage({ setPage, currentUser }: ReferralPageProps
                     </ol>
                 </div>
 
-                {/* --- My Referrals Section --- */}
                 <div className="bg-white p-6 rounded-xl shadow">
                     <h3 className="text-lg font-bold text-gray-800 mb-3">My Referrals</h3>
                     {loading ? (
