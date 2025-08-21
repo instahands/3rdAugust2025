@@ -1,6 +1,6 @@
 // src/pages/ProfileSetupPage.tsx
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react'; // Add useEffect
 import { supabase } from '../supabaseClient';
 
 interface ProfileSetupPageProps {
@@ -13,19 +13,35 @@ export default function ProfileSetupPage({ onProfileComplete }: ProfileSetupPage
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // --- NEW: useEffect to apply a captured referral code ---
+    useEffect(() => {
+        const applyCode = async () => {
+            const referralCode = localStorage.getItem('referral_code');
+            if (referralCode) {
+                console.log('Found referral code, applying it now...');
+                const { error } = await supabase.rpc('apply_referral_code', { referral_code: referralCode });
+                if (error) {
+                    console.error('Error applying referral code:', error);
+                } else {
+                    console.log('Referral code applied successfully.');
+                }
+                // Clean up the code from storage so it's not used again
+                localStorage.removeItem('referral_code');
+            }
+        };
+        applyCode();
+    }, []);
+
     const handleProfileUpdate = async (event: FormEvent) => {
         event.preventDefault();
         setLoading(true);
         setError('');
-
         const { error: updateError } = await supabase.auth.updateUser({
-            data: { name: fullName, email: email } // Update both name and email
+            data: { name: fullName, email: email }
         });
-        
         if (updateError) {
             setError(updateError.message);
         } else {
-            // Tell the parent component that the profile is complete
             onProfileComplete();
         }
         setLoading(false);
@@ -37,7 +53,6 @@ export default function ProfileSetupPage({ onProfileComplete }: ProfileSetupPage
                 <h2 className="text-2xl font-bold text-center text-gray-800">Complete Your Profile</h2>
                 <p className="text-center text-gray-500">Please provide your name and email to continue.</p>
                 {error && <p className="text-red-500 text-sm text-center bg-red-100 p-2 rounded-md">{error}</p>}
-                
                 <form onSubmit={handleProfileUpdate} className="space-y-4">
                     <div>
                         <input type="text" placeholder="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="w-full px-4 py-3 text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"/>

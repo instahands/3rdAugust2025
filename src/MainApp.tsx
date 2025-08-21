@@ -1,4 +1,4 @@
-// src/MainApp.tsx (FINAL CLEANUP)
+// src/MainApp.tsx (UPDATED TO CAPTURE REFERRAL CODE)
 
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
@@ -14,8 +14,6 @@ import ProfileSetupPage from './pages/ProfileSetupPage';
 import ServiceDetailModal from './components/home/ServiceDetailModal';
 import AddAddressModal from './components/account/AddAddressModal';
 import { HomeIcon, ListIcon, AccountIcon } from './components/common/Icons';
-// REMOVED: Unused import for isLocationInServiceArea
-// import { isLocationInServiceArea } from './locationService'; 
 import { Address, Service } from './types';
 
 const BottomNavBar = ({ setPage, currentPage }: { setPage: (page: string) => void, currentPage: string | null }) => {
@@ -51,6 +49,20 @@ export default function MainApp() {
     const [editingAddress, setEditingAddress] = useState<Address | null>(null);
     const [dataVersion, setDataVersion] = useState(0);
     const refreshData = () => setDataVersion(v => v + 1);
+
+    // --- NEW: useEffect to capture referral code from URL ---
+    useEffect(() => {
+        // This runs only once when the app first loads
+        const hash = window.location.hash;
+        if (hash.includes('#ref=')) {
+            const code = hash.split('=')[1];
+            if (code) {
+                // Store the referral code in local storage to use after sign-up
+                localStorage.setItem('referral_code', code);
+                console.log('Referral code captured:', code);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         const fetchOrders = async (userId: string) => {
