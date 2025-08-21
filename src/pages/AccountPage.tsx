@@ -1,19 +1,21 @@
-// src/pages/AccountPage.tsx (CORRECTED)
+// src/pages/AccountPage.tsx (FINAL CORRECTED VERSION)
 
 import { useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { Address } from '../types'; // --- NEW: Import Address type
-import { UserIcon, ProfileIcon, AddressIcon, PaymentIcon, NotificationIcon, HelpIcon, ChevronRightIcon } from '../components/common/Icons';
+import { Address } from '../types';
+
+// --- UPDATED: Imported GiftIcon and InfoIcon ---
+import { UserIcon, ProfileIcon, AddressIcon, NotificationIcon, HelpIcon, ChevronRightIcon, GiftIcon, InfoIcon } from '../components/common/Icons';
 
 // Import the sub-pages
 import ProfileDetailsPage from '../components/account/ProfileDetailsPage';
 import SavedAddressesPage from '../components/account/SavedAddressesPage';
 import AddAddressModal from '../components/account/AddAddressModal';
-import PaymentMethodsPage from '../components/account/PaymentMethodsPage';
 import NotificationsPage from '../components/account/NotificationsPage';
 import HelpCenterPage from '../components/account/HelpCenterPage';
+import AboutPage from '../components/account/AboutPage';
+import ReferralPage from '../components/account/ReferralPage';
 
-// --- Interfaces and AccountMenu component remain the same ---
 interface AccountMenuProps {
     setPage: (page: string) => void;
     currentUser: User | null;
@@ -21,15 +23,18 @@ interface AccountMenuProps {
 }
 
 const AccountMenu = ({ setPage, currentUser, handleLogout }: AccountMenuProps) => {
-    // ... menu code
+    // --- UPDATED: Assigned new icons to menu items ---
     const menuItems = [
         { name: 'Profile Details', icon: <ProfileIcon />, page: 'profileDetails' },
         { name: 'Saved Addresses', icon: <AddressIcon />, page: 'savedAddresses' },
+        { name: 'Notifications', icon: <NotificationIcon />, page: 'notifications' },
+        { name: 'Refer & Earn', icon: <GiftIcon />, page: 'referral' },
         { name: 'Help Center', icon: <HelpIcon />, page: 'helpCenter' },
+        { name: 'About InstaHands', icon: <InfoIcon />, page: 'about' },
     ];
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto pb-24">
             <div className="flex items-center space-x-4 mb-8 p-4 bg-white rounded-xl shadow">
                 <div className="p-3 bg-gray-100 rounded-full"><UserIcon /></div>
                 <div>
@@ -58,13 +63,15 @@ const AccountMenu = ({ setPage, currentUser, handleLogout }: AccountMenuProps) =
                     Logout
                 </button>
             </div>
+            <div className="mt-8 text-center text-gray-400 text-sm">
+                <p>Version {import.meta.env.VITE_APP_VERSION}</p>
+            </div>
         </div>
     );
 };
 
-
 interface AccountPageProps {
-    setPage: (page: string) => void; 
+    setPage: (page: string) => void;
     currentUser: User | null;
     handleLogout: () => void;
 }
@@ -73,7 +80,6 @@ export default function AccountPage({ currentUser, handleLogout }: AccountPagePr
     const [subPage, setSubPage] = useState('account'); 
     
     const [isAddressModalOpen, setAddressModalOpen] = useState(false);
-    // --- MODIFIED: Explicitly set the type for the state ---
     const [editingAddress, setEditingAddress] = useState<Address | null>(null);
 
     const handleOpenAddAddressModal = () => {
@@ -90,10 +96,15 @@ export default function AccountPage({ currentUser, handleLogout }: AccountPagePr
             case 'profileDetails':
                 return <ProfileDetailsPage setPage={setSubPage} currentUser={currentUser} />;
             case 'savedAddresses':
-                // The type of setEditingAddress now correctly matches the prop requirement
                 return <SavedAddressesPage setPage={setSubPage} currentUser={currentUser} openAddAddressModal={handleOpenAddAddressModal} setEditingAddress={setEditingAddress} />;
+            case 'referral':
+                return <ReferralPage setPage={setSubPage} currentUser={currentUser} />;
+            case 'notifications':
+                return <NotificationsPage setPage={setSubPage} />;
             case 'helpCenter':
                 return <HelpCenterPage setPage={setSubPage} />;
+            case 'about':
+                return <AboutPage setPage={setSubPage} />;
             default:
                 return <AccountMenu setPage={setSubPage} currentUser={currentUser} handleLogout={handleLogout} />;
         }

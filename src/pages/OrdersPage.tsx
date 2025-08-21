@@ -1,10 +1,9 @@
-// src/pages/OrdersPage.tsx (CORRECTED)
+// src/pages/OrdersPage.tsx (FIXED PADDING)
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import OrderCard from '../components/orders/OrderCard';
 
-// --- NEW: Define the Order type ---
 interface Order {
     id: string;
     date: string;
@@ -15,7 +14,6 @@ interface Order {
     address: string;
 }
 
-// --- NEW: Define the props for the page ---
 interface OrdersPageProps {
     setPage: (page: string) => void;
     currentPage: string;
@@ -23,7 +21,6 @@ interface OrdersPageProps {
 
 export default function OrdersPage({ setPage, currentPage }: OrdersPageProps) {
     const [activeTab, setActiveTab] = useState('upcoming');
-    // --- MODIFIED: Explicitly typed the state ---
     const [upcomingOrders, setUpcomingOrders] = useState<Order[]>([]);
     const [pastOrders, setPastOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
@@ -42,7 +39,6 @@ export default function OrdersPage({ setPage, currentPage }: OrdersPageProps) {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
-                // No changes needed here, TypeScript now understands the types
                 setUpcomingOrders(data.filter(order => new Date(order.date) >= today));
                 setPastOrders(data.filter(order => new Date(order.date) < today));
             }
@@ -54,7 +50,6 @@ export default function OrdersPage({ setPage, currentPage }: OrdersPageProps) {
         }
     }, [currentPage]);
 
-    // --- NEW: Typed props for OrderList ---
     const OrderList = ({ orders, isUpcoming }: { orders: Order[], isUpcoming: boolean }) => {
         if (orders.length === 0) {
             return (
@@ -70,14 +65,14 @@ export default function OrdersPage({ setPage, currentPage }: OrdersPageProps) {
         }
         return (
             <div className="space-y-4 mt-4">
-                {/* TypeScript now knows 'order' is of type Order */}
                 {orders.map((order: Order) => <OrderCard key={order.id} order={order} isUpcoming={isUpcoming} />)}
             </div>
         );
     };
 
     return (
-        <div className="max-w-4xl mx-auto">
+        // FIX: Added pb-32 for padding to prevent overlap with the bottom nav bar
+        <div className="max-w-4xl mx-auto pb-32">
             <h2 className="text-3xl font-bold text-gray-800 mb-6">My Orders</h2>
             <div className="flex border-b">
                 <button

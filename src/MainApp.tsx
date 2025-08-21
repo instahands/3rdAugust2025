@@ -1,10 +1,8 @@
-// src/MainApp.tsx (FINAL VERSION WITH CORRECTED AUTH LOGIC)
+// src/MainApp.tsx (FINAL CORRECTED VERSION)
 
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { User} from '@supabase/supabase-js';
-
-// --- Import ALL pages and components needed ---
+import { User } from '@supabase/supabase-js';
 import HomePage from './pages/HomePage';
 import OrdersPage from './pages/OrdersPage';
 import AccountPage from './pages/AccountPage';
@@ -16,19 +14,16 @@ import ProfileSetupPage from './pages/ProfileSetupPage';
 import ServiceDetailModal from './components/home/ServiceDetailModal';
 import AddAddressModal from './components/account/AddAddressModal';
 import { HomeIcon, ListIcon, AccountIcon } from './components/common/Icons';
-
-import { isLocationInServiceArea} from './locationService';
+import { isLocationInServiceArea } from './locationService';
 import { Address, Service } from './types';
 
-
-// --- Reusable BottomNavBar ---
 const BottomNavBar = ({ setPage, currentPage }: { setPage: (page: string) => void, currentPage: string | null }) => {
     const navItems = [
         { name: 'home', icon: <HomeIcon />, label: 'Home' },
         { name: 'orders', icon: <ListIcon />, label: 'Orders' },
         { name: 'account', icon: <AccountIcon />, label: 'Account' },
     ];
-    const isAccountSubPage = currentPage ? ['profileDetails', 'savedAddresses', 'paymentMethods', 'notifications', 'helpCenter'].includes(currentPage) : false;
+    const isAccountSubPage = currentPage ? ['profileDetails', 'savedAddresses', 'notifications', 'helpCenter', 'about', 'referral'].includes(currentPage) : false;
     const isServiceSubPage = currentPage ? ['booking', 'checkout', 'confirmation'].includes(currentPage) : false;
     return (
         <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t z-40">
@@ -45,12 +40,9 @@ const BottomNavBar = ({ setPage, currentPage }: { setPage: (page: string) => voi
 };
 
 export default function MainApp() {
-    // --- TOP-LEVEL STATE MANAGEMENT ---
-    const [page, setPage] = useState<string | null>(null); // Start as null for loading state
+    const [page, setPage] = useState<string | null>(null);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [orders, setOrders] = useState<any[]>([]);
-    
-    // Booking Flow State
     const [bookingDetails, setBookingDetails] = useState<any>(null);
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [isServiceDetailOpen, setIsServiceDetailOpen] = useState(false);
@@ -58,45 +50,29 @@ export default function MainApp() {
     const [editingAddress, setEditingAddress] = useState<Address | null>(null);
     const [dataVersion, setDataVersion] = useState(0);
     const refreshData = () => setDataVersion(v => v + 1);
-
-    // --- NEW: State for location status at the top level ---
     const [locationStatus, setLocationStatus] = useState<'checking' | 'available' | 'unavailable' | null>(null);
 
-    // --- CORRECTED AUTH & DATA FETCHING EFFECT ---
     useEffect(() => {
         const fetchOrders = async (userId: string) => {
             const { data, error } = await supabase.from('orders').select('*').eq('user_id', userId).order('date', { ascending: false });
             if (error) console.error('Error fetching orders:', error);
             else setOrders(data || []);
         };
-
         const checkLocationAndSetPage = (user: User) => {
-            if (navigator.geolocation) {
-                setLocationStatus('checking');
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const location = { lat: position.coords.latitude, lng: position.coords.longitude };
-                        const isAvailable = isLocationInServiceArea(location);
-                        setLocationStatus(isAvailable ? 'available' : 'unavailable');
-                        
-                        if (!user.user_metadata?.name) {
-                            setPage('profileSetup');
-                        } else {
-                            setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
-                        }
-                    },
-                    (error) => {
-                        console.error("Geolocation error:", error);
-                        setLocationStatus('unavailable');
-                        setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
-                    }
-                );
-            } else {
-                setLocationStatus('unavailable');
-                setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
-            }
+            setLocationStatus('checking');
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const location = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    const isAvailable = isLocationInServiceArea(location);
+                    setLocationStatus(isAvailable ? 'available' : 'unavailable');
+                    setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
+                },
+                () => {
+                    setLocationStatus('unavailable');
+                    setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
+                }
+            );
         };
-
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const user = session?.user ?? null;
             setCurrentUser(user);
@@ -113,20 +89,30 @@ export default function MainApp() {
                 setPage('auth');
             }
         });
-
         return () => subscription.unsubscribe();
     }, []);
     
     useEffect(() => { window.scrollTo(0, 0); }, [page]);
 
-    // --- HANDLER FUNCTIONS ---
     const handleLogout = async () => { await supabase.auth.signOut(); };
+
+    // --- THIS IS THE CORRECTED addOrder FUNCTION ---
     const addOrder = async (newOrderData: any) => {
         if (!currentUser) return;
-        const orderToInsert = { ...newOrderData, user_id: currentUser.id, status: 'Pending', trackingStatus: 'Booked' };
+
+        // The newOrderData object is now "flat" and no longer contains a nested 'service' object.
+        // This function correctly spreads the properties from newOrderData.
+        const orderToInsert = {
+            ...newOrderData, 
+            user_id: currentUser.id,
+            status: 'Pending',
+            trackingStatus: 'Booked'
+        };
+        
         const { data, error } = await supabase.from('orders').insert([orderToInsert]).select().single();
+
         if (error) {
-            console.error("Error adding order:", error);
+            console.error("DATABASE ERROR:", error);
             alert("Sorry, there was an error booking your service.");
         } else {
             setOrders(prev => [data, ...prev]);
@@ -134,6 +120,7 @@ export default function MainApp() {
             setPage('confirmation');
         }
     };
+
     const viewServiceDetail = (service: Service) => {
         setSelectedService(service);
         setIsServiceDetailOpen(true);
@@ -152,29 +139,18 @@ export default function MainApp() {
         setIsAddModalOpen(true);
     };
 
-    // --- RENDER LOGIC ---
     const renderPage = () => {
         switch (page) {
-            case null:
-                return <div className="flex items-center justify-center h-screen"><p className="text-gray-500">Loading...</p></div>;
-            case 'auth':
-                return <AuthPage />;
-            case 'profileSetup':
-                return <ProfileSetupPage onProfileComplete={() => setPage('home')} />;
-            case 'home':
-                return <HomePage setPage={setPage} currentUser={currentUser} orders={orders} viewServiceDetail={viewServiceDetail} startBooking={startBooking} />;
-            case 'booking': 
-                return <BookingPage setPage={setPage} service={selectedService} proceedToCheckout={proceedToCheckout} goBack={() => setPage('home')} currentUser={currentUser} dataVersion={dataVersion} openAddAddressModal={() => setIsAddModalOpen(true)} onEditAddress={handleEditAddress} locationStatus={locationStatus} />;
-            case 'checkout':
-                return <CheckoutPage setPage={setPage} bookingDetails={bookingDetails} addOrder={addOrder} />;
-            case 'confirmation':
-                return <ConfirmationPage setPage={setPage} bookingDetails={bookingDetails} />;
-            case 'orders':
-                return <OrdersPage setPage={setPage} currentPage={page} />;
-            case 'account':
-                return <AccountPage setPage={setPage} currentUser={currentUser} handleLogout={handleLogout} />;
-            default:
-                return <AuthPage />;
+            case null: return <div className="flex items-center justify-center h-screen"><p className="text-gray-500">Loading...</p></div>;
+            case 'auth': return <AuthPage />;
+            case 'profileSetup': return <ProfileSetupPage onProfileComplete={() => setPage('home')} />;
+            case 'home': return <HomePage setPage={setPage} currentUser={currentUser} orders={orders} viewServiceDetail={viewServiceDetail} startBooking={startBooking} />;
+            case 'booking': return <BookingPage setPage={setPage} service={selectedService} proceedToCheckout={proceedToCheckout} goBack={() => setPage('home')} currentUser={currentUser} dataVersion={dataVersion} openAddAddressModal={() => setIsAddModalOpen(true)} onEditAddress={handleEditAddress} />;
+            case 'checkout': return <CheckoutPage setPage={setPage} bookingDetails={bookingDetails} addOrder={addOrder} userInfo={currentUser?.user_metadata} />;
+            case 'confirmation': return <ConfirmationPage setPage={setPage} bookingDetails={bookingDetails} />;
+            case 'orders': return <OrdersPage setPage={setPage} currentPage={page} />;
+            case 'account': return <AccountPage setPage={setPage} currentUser={currentUser} handleLogout={handleLogout} />;
+            default: return <AuthPage />;
         }
     };
     

@@ -1,18 +1,13 @@
-// src/pages/CheckoutPage.tsx
-
 import { useEffect, useState } from 'react';
 import SubPageHeader from '../components/common/SubPageHeader';
-import { UpiIcon,PaymentGraphic, CardIcon } from '../components/common/Icons';
-
-// --- End Placeholder Icons ---
-
+import { UpiIcon, PaymentGraphic, CardIcon } from '../components/common/Icons';
 
 export default function CheckoutPage({ setPage, bookingDetails, addOrder, userInfo }: any) {
     // State to manage which payment method is selected, defaulting to COD
     const [paymentMethod, setPaymentMethod] = useState('cod');
     const [scriptLoaded, setScriptLoaded] = useState(false);
 
-    // --- MODIFIED: useEffect with enhanced logging ---
+    // useEffect to load the Razorpay script
     useEffect(() => {
         console.log("Attempting to load Razorpay script...");
         const script = document.createElement('script');
@@ -49,15 +44,32 @@ export default function CheckoutPage({ setPage, bookingDetails, addOrder, userIn
     const price = (bookingDetails.duration / 60) * bookingDetails.service.price;
     const fullAddressString = `${bookingDetails.address.street_address}, ${bookingDetails.address.city}, ${bookingDetails.address.state} ${bookingDetails.address.postal_code}`;
 
+    // --- UPDATED to handle different frequencies ---
     const confirmAndAddOrder = () => {
+        // Prepare date details based on frequency
+        let date_info = {};
+        let service_start_date = new Date().toISOString();
+
+        if (bookingDetails.frequency === 'daily') {
+            date_info = { date: bookingDetails.date };
+            service_start_date = bookingDetails.date;
+        } else if (bookingDetails.frequency === 'weekly') {
+            date_info = { start_date: bookingDetails.weeklyStartDate, end_date: bookingDetails.weeklyEndDate };
+            service_start_date = bookingDetails.weeklyStartDate;
+        } else if (bookingDetails.frequency === 'monthly') {
+            date_info = { month: bookingDetails.selectedMonth };
+            service_start_date = `${bookingDetails.selectedMonth}-01`;
+        }
+
         const finalOrder = {
-            date: bookingDetails.date,
+            ...date_info, // This will add the correct date fields
+            date: service_start_date, // Standardized start date for sorting
             duration: bookingDetails.duration,
             timeSlot: bookingDetails.timeSlot,
             address: fullAddressString,
             workDescription: bookingDetails.workDescription,
             manpowerType: bookingDetails.service.manpowerType,
-            subscriptionType: 'Instant',
+            subscriptionType: bookingDetails.frequency, // Changed from 'Instant'
         };
         addOrder(finalOrder);
     };
@@ -128,10 +140,39 @@ export default function CheckoutPage({ setPage, bookingDetails, addOrder, userIn
                 <div>
                     <h3 className="font-bold text-lg mb-3">Booking Summary</h3>
                     <div className="p-4 bg-gray-50 rounded-lg space-y-2 text-sm">
-                        <div className="flex justify-between"><span className="text-gray-600">Service:</span><span className="font-semibold">{bookingDetails.service.name}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-600">Date:</span><span className="font-semibold">{new Date(bookingDetails.date).toDateString()}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-600">Time:</span><span className="font-semibold">{bookingDetails.timeSlot}</span></div>
-                        <div className="flex justify-between items-start"><span className="text-gray-600 flex-shrink-0 mr-2">Address:</span><span className="font-semibold text-right">{fullAddressString}</span></div>
+                        <div className="flex justify-between">
+                            <span className="text-gray-600">Service:</span>
+                            <span className="font-semibold">{bookingDetails.service.name}</span>
+                        </div>
+                        
+                        {/* --- NEW DYNAMIC DATE DISPLAY --- */}
+                        {bookingDetails.frequency === 'daily' && (
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Date:</span>
+                                <span className="font-semibold">{new Date(bookingDetails.date).toDateString()}</span>
+                            </div>
+                        )}
+                        {bookingDetails.frequency === 'weekly' && (
+                             <div className="flex justify-between">
+                                <span className="text-gray-600">For Week:</span>
+                                <span className="font-semibold text-right">{bookingDetails.weeklyStartDate} to {bookingDetails.weeklyEndDate}</span>
+                            </div>
+                        )}
+                        {bookingDetails.frequency === 'monthly' && (
+                             <div className="flex justify-between">
+                                <span className="text-gray-600">For Month:</span>
+                                <span className="font-semibold">{bookingDetails.selectedMonth}</span>
+                            </div>
+                        )}
+                        
+                        <div className="flex justify-between">
+                            <span className="text-gray-600">Time:</span>
+                            <span className="font-semibold">{bookingDetails.timeSlot}</span>
+                        </div>
+                        <div className="flex justify-between items-start">
+                            <span className="text-gray-600 flex-shrink-0 mr-2">Address:</span>
+                            <span className="font-semibold text-right">{fullAddressString}</span>
+                        </div>
                     </div>
                 </div>
                  <div>

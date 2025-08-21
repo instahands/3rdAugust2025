@@ -28,3 +28,16 @@ export const ListIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className=
 export const UpiIcon = () => <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 19.1482C6.22328 18.5042 5 16.9242 5 15.0002V11.0002C5 8.79118 6.79118 7.00018 9 7.00018C11.2088 7.00018 13 8.79118 13 11.0002V14.0002C13 15.1048 13.8952 16.0002 15 16.0002C16.1048 16.0002 17 15.1048 17 14.0002V10.0002M17 10.0002C17 7.79118 18.7912 6.00018 21 6.00018M17 10.0002H19M3 6.00018L3 18.0002" stroke="#4A5568" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 export const CardIcon = () => <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="6" width="18" height="12" rx="2" stroke="#4A5568" strokeWidth="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="#4A5568" strokeWidth="2"/></svg>;
 export const AccountIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
+// Add these two new icons to the end of src/components/common/Icons.tsx
+
+export const GiftIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4H5z" />
+    </svg>
+);
+
+export const InfoIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);

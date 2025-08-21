@@ -1,11 +1,12 @@
-// src/pages/ConfirmationPage.tsx
-import { CalendarIcon, ClockIcon, LocationPinIcon } from '../components/common/Icons';
+// src/pages/ConfirmationPage.tsx (FIXED PADDING)
 
+import { CalendarIcon, ClockIcon, LocationPinIcon } from '../components/common/Icons';
 
 export default function ConfirmationPage({ setPage, bookingDetails }: any) {
     if (!bookingDetails) {
         return (
-            <div className="text-center max-w-2xl mx-auto py-16">
+            // FIX: Increased bottom padding from py-16 to pt-16 pb-32
+            <div className="text-center max-w-2xl mx-auto pt-16 pb-32">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Thank you!</h2>
                 <p className="text-gray-600 mb-8">Your booking request has been submitted.</p>
                 <button onClick={() => setPage('home')} className="px-6 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700">
@@ -15,7 +16,8 @@ export default function ConfirmationPage({ setPage, bookingDetails }: any) {
         );
     }
     return (
-        <div className="text-center max-w-2xl mx-auto py-16">
+        // FIX: Increased bottom padding from py-16 to pt-16 pb-32 to avoid overlap with nav bar
+        <div className="text-center max-w-2xl mx-auto pt-16 pb-32">
             <div className="mx-auto w-24 h-24 flex items-center justify-center bg-green-100 rounded-full">
                 <svg className="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
             </div>
