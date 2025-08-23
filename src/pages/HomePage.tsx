@@ -44,7 +44,7 @@ export default function HomePage({ setPage, currentUser, orders, viewServiceDeta
     const recentBookings = orders.filter(order => new Date(order.date) < new Date()).slice(0, 5);
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 pb-24">
+        <div className="max-w-4xl mx-auto px-4 space-y-8 pb-24">
             <header className="flex justify-between items-center">
                 <HeaderLogo />
                 <button onClick={() => setPage('account')} className="p-2 bg-white rounded-full shadow border"><UserIcon /></button>
