@@ -72,7 +72,7 @@ export default function OrdersPage({ setPage, currentPage }: OrdersPageProps) {
 
     return (
         // FIX: Added pb-32 for padding to prevent overlap with the bottom nav bar
-        <div className="max-w-4xl mx-auto px-4 pb-32">
+        <div className="max-w-4xl mx-auto px-4 pt-4 pb-32">
             <h2 className="text-3xl font-bold text-gray-800 mb-6">My Orders</h2>
             <div className="flex border-b">
                 <button

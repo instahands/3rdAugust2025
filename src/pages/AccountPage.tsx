@@ -34,7 +34,7 @@ const AccountMenu = ({ setPage, currentUser, handleLogout }: AccountMenuProps) =
     ];
 
     return (
-        <div className="max-w-4xl mx-auto px-4 pb-24">
+        <div className="max-w-4xl mx-auto px-4 pt-4 pb-24">
             <div className="flex items-center space-x-4 mb-8 p-4 bg-white rounded-xl shadow">
                 <div className="p-3 bg-gray-100 rounded-full"><UserIcon /></div>
                 <div>
