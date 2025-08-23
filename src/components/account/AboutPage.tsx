@@ -23,7 +23,7 @@ const StarIcon = () => (
 export default function AboutPage({ setPage }: { setPage: (page: string) => void }) {
     return (
         // Added bottom padding to prevent being covered by the nav bar
-        <div className="max-w-2xl mx-auto pb-24">
+        <div className="max-w-2xl mx-auto pb-24 px-4 pt-4">
             <SubPageHeader title="About InstaHands" onBack={() => setPage('account')} />
             
             <div className="space-y-6">

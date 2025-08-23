@@ -130,7 +130,7 @@ export default function CheckoutPage({ setPage, bookingDetails, addOrder, userIn
     };
 
     return (
-        <div className="max-w-4xl mx-auto pb-32">
+        <div className="max-w-4xl mx-auto px-4 pt-4  pb-32">
             <SubPageHeader title="Confirm & Pay" onBack={() => setPage('booking')} />
             <div className="bg-white p-6 rounded-xl shadow-lg space-y-6">
                 <div className="text-center">

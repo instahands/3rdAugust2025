@@ -171,7 +171,7 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
     return (
         <>
             {isMapPickerOpen && userLocation && ( <MapPicker initialLocation={userLocation} onConfirm={(addressString: string) => { const newAddress: Address = { id: Date.now(), address_type: 'Pinned Location', street_address: addressString.split(',')[0] || 'N/A', city: 'Bhilai', state: 'Chhattisgarh', postal_code: '490001', phone_number: currentUser?.phone || '', }; setSelectedAddress(newAddress); setIsMapPickerOpen(false); }} onCancel={() => setIsMapPickerOpen(false)} /> )}
-            <div className="max-w-4xl mx-auto pb-32">
+            <div className="max-w-4xl mx-auto px-4 pt-4 pb-32">
                 <SubPageHeader title={service.name} onBack={goBack} />
                 <div className="bg-white p-6 rounded-xl shadow-lg space-y-6">
                     <div>

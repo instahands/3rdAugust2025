@@ -73,7 +73,7 @@ export default function ProfileDetailsPage({ setPage, currentUser }: ProfileDeta
     };
 
     return (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto px-4 pt-4">
             <SubPageHeader title="Profile Details" onBack={() => setPage('account')} />
             <div className="bg-white p-6 rounded-xl shadow-lg space-y-4">
                 {error && <p className="text-red-500 text-sm text-center bg-red-100 p-2 rounded-md">{error}</p>}

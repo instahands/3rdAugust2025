@@ -54,7 +54,7 @@ export default function SavedAddressesPage({ setPage, currentUser, openAddAddres
     };
 
     return (
-        <div className="max-w-2xl mx-auto pb-32">
+        <div className="max-w-2xl mx-auto px-4 pt-4 pb-32">
             <SubPageHeader title="Saved Addresses" onBack={() => setPage('account')} />
             {loading ? ( <p className="text-center text-gray-500 py-8">Loading addresses...</p> ) : (
                 <div className="space-y-4">

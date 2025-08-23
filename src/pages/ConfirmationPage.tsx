@@ -6,7 +6,7 @@ export default function ConfirmationPage({ setPage, bookingDetails }: any) {
     if (!bookingDetails) {
         return (
             // FIX: Increased bottom padding from py-16 to pt-16 pb-32
-            <div className="text-center max-w-2xl mx-auto pt-16 pb-32">
+            <div className="text-center max-w-2xl mx-auto px-4 pt-16 pb-32">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Thank you!</h2>
                 <p className="text-gray-600 mb-8">Your booking request has been submitted.</p>
                 <button onClick={() => setPage('home')} className="px-6 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700">

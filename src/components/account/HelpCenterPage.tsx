@@ -52,7 +52,7 @@ const faqs = [
 
 export default function HelpCenterPage({ setPage }: { setPage: (page: string) => void }) {
     return (
-        <div className="max-w-2xl mx-auto pb-24">
+        <div className="max-w-2xl mx-auto px-4 pt-4 pb-24 ">
             <SubPageHeader title="Help Center" onBack={() => setPage('account')} />
             
             <div className="bg-white rounded-xl shadow overflow-hidden">
