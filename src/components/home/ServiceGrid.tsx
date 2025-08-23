@@ -34,7 +34,7 @@ const ServiceGrid = ({ services, onServiceClick }: ServiceGridProps) => {
                 <button
                     key={service.name}
                     onClick={() => onServiceClick(service)}
-                    className="p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center text-center aspect-square"
+                    className="p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center text-center"
                 >
                     <div className={`p-4 rounded-full ${service.color}`}>
                         {serviceIcons[service.manpowerType] || <HousekeepingIcon />}
