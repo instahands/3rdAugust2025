@@ -30,7 +30,7 @@ export default function NotificationsPage({ setPage }: { setPage: (page: string)
     };
     
     return (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto px-4 pt-4">
             <SubPageHeader title="Notifications" onBack={() => setPage('account')} />
             <div className="bg-white rounded-xl shadow divide-y">
                 <Toggle label="Order Updates" isEnabled={toggles.orderUpdates} onToggle={() => handleToggle('orderUpdates')} />

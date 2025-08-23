@@ -17,7 +17,7 @@ export default function ConfirmationPage({ setPage, bookingDetails }: any) {
     }
     return (
         // FIX: Increased bottom padding from py-16 to pt-16 pb-32 to avoid overlap with nav bar
-        <div className="text-center max-w-2xl mx-auto pt-16 pb-32">
+        <div className="text-center max-w-2xl mx-auto px-4  pt-16 pb-32">
             <div className="mx-auto w-24 h-24 flex items-center justify-center bg-green-100 rounded-full">
                 <svg className="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
             </div>
