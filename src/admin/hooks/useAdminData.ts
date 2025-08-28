@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../shared/lib/supabaseClient';
-import { Profile, Order } from '../../shared/types/types';
+import { Profile, Order, Address } from '../../shared/types/types';
 
 export const useAdminData = () => {
     const [users, setUsers] = useState<Profile[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
+    const [addresses, setAddresses] = useState<Address[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -34,10 +35,11 @@ export const useAdminData = () => {
             console.log("DEBUG: Session found for user:", sessionData.session.user.id);
 
             // STEP 2: Data fetching
-            console.log("DEBUG: Session confirmed. Fetching users and orders...");
-            const [usersResponse, ordersResponse] = await Promise.all([
+            console.log("DEBUG: Session confirmed. Fetching users, orders, and addresses...");
+            const [usersResponse, ordersResponse, addressesResponse] = await Promise.all([
                 supabase.from('profiles').select('*'),
-                supabase.from('orders').select('*')
+                supabase.from('orders').select('*'),
+                supabase.from('addresses').select('*')
             ]);
 
             // Log users response
@@ -56,6 +58,14 @@ export const useAdminData = () => {
             console.log("DEBUG: Orders data received from Supabase:", ordersResponse.data);
             setOrders(ordersResponse.data || []);
 
+            // Log addresses response
+            if (addressesResponse.error) {
+                console.error("DEBUG: Error fetching addresses!", addressesResponse.error);
+                throw new Error(`Failed to fetch addresses: ${addressesResponse.error.message}`);
+            }
+            console.log("DEBUG: Addresses data received from Supabase:", addressesResponse.data);
+            setAddresses(addressesResponse.data || []);
+
         } catch (err: any) {
             console.error("--- DEBUG: A critical error occurred! ---", err);
             setError(err.message);
@@ -69,13 +79,6 @@ export const useAdminData = () => {
         fetchData();
     }, [fetchData]);
 
-    // State update functions (no changes)
-    const updateUserInState = (updatedUser: Profile) => {
-        setUsers(users.map(user => user.id === updatedUser.id ? updatedUser : user));
-    };
-    const addUserToState = (newUser: Profile) => {
-        setUsers([...users, newUser]);
-    };
     const removeUserFromState = (userId: string | number) => {
         setUsers(users.filter(user => user.id !== userId));
     };
@@ -83,11 +86,10 @@ export const useAdminData = () => {
     return { 
         users, 
         orders, 
+        addresses, 
         loading, 
         error, 
         refetchData: fetchData,
-        updateUserInState,
-        addUserToState,
         removeUserFromState
     };
 };
