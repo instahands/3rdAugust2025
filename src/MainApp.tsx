@@ -1,20 +1,19 @@
 // src/MainApp.tsx (UPDATED TO CAPTURE REFERRAL CODE)
-
 import { useState, useEffect } from 'react';
-import { supabase } from './supabaseClient';
+import { supabase } from './shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
-import HomePage from './pages/HomePage';
-import OrdersPage from './pages/OrdersPage';
-import AccountPage from './pages/AccountPage';
-import BookingPage from './pages/BookingPage';
-import CheckoutPage from './pages/CheckoutPage';
-import ConfirmationPage from './pages/ConfirmationPage';
-import AuthPage from './pages/AuthPage';
-import ProfileSetupPage from './pages/ProfileSetupPage';
-import ServiceDetailModal from './components/home/ServiceDetailModal';
-import AddAddressModal from './components/account/AddAddressModal';
-import { HomeIcon, ListIcon, AccountIcon } from './components/common/Icons';
-import { Address, Service } from './types';
+import HomePage from './app/pages/HomePage';
+import OrdersPage from './app/pages/OrdersPage';
+import AccountPage from './app/pages/AccountPage';
+import BookingPage from './app/pages/BookingPage';
+import CheckoutPage from './app/pages/CheckoutPage';
+import ConfirmationPage from './app/pages/ConfirmationPage';
+import AuthPage from './app/pages/AuthPage';
+import ProfileSetupPage from './app/pages/ProfileSetupPage';
+import ServiceDetailModal from './app/components/home/ServiceDetailModal';
+import AddAddressModal from './app/components/account/AddAddressModal';
+import { HomeIcon, ListIcon, AccountIcon } from './app/components/common/Icons';
+import { Address, Service } from './shared/types/types';
 
 const BottomNavBar = ({ setPage, currentPage }: { setPage: (page: string) => void, currentPage: string | null }) => {
     const navItems = [

@@ -1,7 +1,12 @@
-// src/App.tsx (UPDATED
+// src/App.tsx (CORRECTED)
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import LandingPage from "./pages/LandingPage";
-import MainApp from "./MainApp"; // This now correctly imports from MainApp.tsx
+
+// Import your page and layout components
+import LandingPage from "./app/pages/LandingPage.tsx";
+import MainApp from "./MainApp"; 
+// CORRECTED: The import path now correctly points to the admin folder inside src
+import AdminPanel from "./admin/AdminPanel.tsx"; 
 
 function App() {
   return (
@@ -12,6 +17,9 @@ function App() {
 
         {/* Main app route */}
         <Route path="/app/*" element={<MainApp />} />
+
+        {/* Admin panel route */}
+        <Route path="/admin/*" element={<AdminPanel />} />
       </Routes>
     </Router>
   );
