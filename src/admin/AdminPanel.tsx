@@ -5,10 +5,10 @@ import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
+import WorkerManagementPage from './pages/WorkerManagementPage';
 import OrderManagementPage from './pages/OrderManagementPage';
 import AddressManagementPage from './pages/AddressManagementPage';
 import SettingsPage from './pages/SettingsPage';
-// CORRECTED: Removed unused Profile and Address imports
 import { DataItem } from '../shared/types/types';
 import { supabase } from '../shared/lib/supabaseClient';
 import Modal from './components/shared/Modal';
@@ -22,7 +22,7 @@ const AdminPanel = () => {
   const [isDarkMode, setDarkMode] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  const { users, orders, addresses, loading, removeUserFromState } = useAdminData();
+  const { users, orders, addresses, loading, refetchData } = useAdminData();
 
   const [isModalOpen, setModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<{ title: string; data: DataItem | Partial<DataItem> | null; type: string }>({ title: '', data: null, type: '' });
@@ -33,13 +33,38 @@ const AdminPanel = () => {
         setCurrentUser(session?.user ?? null);
     };
     checkSession();
+
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
         setCurrentUser(session?.user ?? null);
     });
+
+    // --- REALTIME NOTIFICATION LISTENER ---
+    const ordersChannel = supabase.channel('custom-all-channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          console.log('Database change received!', payload);
+          // Refetch all data to keep the panel in sync
+          refetchData(); 
+          
+          if (payload.eventType === 'INSERT') {
+            alert(`🔔 New Order Received!\n\nService: ${payload.new.manpowerType}\nAddress: ${payload.new.address}`);
+          }
+          if (payload.eventType === 'UPDATE') {
+            if (payload.new.worker_id && !payload.old.worker_id) {
+                 alert(`✅ Worker Assigned!\n\nOrder for ${payload.new.manpowerType} has been accepted.`);
+            }
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
         authListener.subscription.unsubscribe();
+        supabase.removeChannel(ordersChannel); // Important: Clean up the listener
     };
-  }, []);
+  }, [refetchData]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -57,21 +82,35 @@ const AdminPanel = () => {
   };
 
   const handleDelete = async (type: string, id: string | number) => {
-    if (window.confirm(`Are you sure you want to delete this ${type}?`)) {
-      const tableName = type === 'User' ? 'profiles' : type === 'Order' ? 'orders' : 'addresses';
+    const tableName = type === 'User' ? 'profiles' : type === 'Order' ? 'orders' : 'addresses';
+    if (window.confirm(`Are you sure you want to delete this ${type} from the ${tableName} table?`)) {
       const { error } = await supabase.from(tableName).delete().eq('id', id);
       if (error) {
         alert(`Error deleting ${type}: ${error.message}`);
       } else {
-        if (type === 'User') removeUserFromState(id);
-        // You can add logic to refetch or update state for other types here
+        refetchData(); // Refresh data after deletion
       }
     }
   };
   
   const handleSave = async (formData: Partial<DataItem>) => {
-    console.log("Saving:", formData);
-    setModalOpen(false);
+    const isEditing = modalContent.data && 'id' in modalContent.data && modalContent.data.id;
+    const tableName = modalContent.type === 'User' ? 'profiles' : modalContent.type === 'Order' ? 'orders' : 'addresses';
+    
+    let response;
+    if (isEditing) {
+        const { id, ...updateData } = formData;
+        response = await supabase.from(tableName).update(updateData).eq('id', id).select().single();
+    } else {
+        response = await supabase.from(tableName).insert(formData).select().single();
+    }
+
+    if (response.error) {
+        alert(`Error saving ${modalContent.type}: ${response.error.message}`);
+    } else {
+        refetchData(); // Refresh data after saving
+        setModalOpen(false);
+    }
   };
 
   const renderPage = () => {
@@ -93,9 +132,16 @@ const AdminPanel = () => {
         return <DashboardPage />;
       case 'User Management':
         return <UserManagementPage
-          users={users}
+          users={users.filter(u => u.role === 'user')}
           onAdd={() => handleAdd('User', { name: '', email: '', role: 'user' })}
           onEdit={(user) => handleEdit('User', user)}
+          onDelete={(id) => handleDelete('User', id)}
+        />;
+      case 'Worker Management':
+        return <WorkerManagementPage
+          workers={users.filter(u => u.role === 'worker')}
+          onAdd={() => handleAdd('User', { name: '', email: '', role: 'worker' })}
+          onEdit={(worker) => handleEdit('User', worker)}
           onDelete={(id) => handleDelete('User', id)}
         />;
       case 'Order Management':

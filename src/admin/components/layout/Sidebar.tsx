@@ -1,6 +1,6 @@
 // src/admin/components/layout/Sidebar.tsx
 
-import { Users, Briefcase, Wrench, Settings, BookOpen, BarChart2, Tag, FileText, Globe, MapPin } from 'lucide-react'; // Added MapPin icon
+import { Users, Briefcase, Wrench, Settings, BookOpen, BarChart2, Tag, FileText, Globe, MapPin } from 'lucide-react';
 import NavItem from './NavItem';
 
 interface SidebarProps {
@@ -21,8 +21,9 @@ const Sidebar = ({ isSidebarOpen, activePage, setActivePage }: SidebarProps) => 
                     <NavItem icon={<BarChart2 size={20} />} text="Dashboard" active={activePage === 'Dashboard'} onClick={() => setActivePage('Dashboard')} isSidebarOpen={isSidebarOpen} />
                     <NavItem icon={<Briefcase size={20} />} text="Management" isSidebarOpen={isSidebarOpen}>
                         <NavItem icon={<Users size={16} />} text="Users" active={activePage === 'User Management'} onClick={() => setActivePage('User Management')} isSidebarOpen={isSidebarOpen} />
+                        {/* ADDED: New NavItem for Workers */}
+                        <NavItem icon={<Wrench size={16} />} text="Workers" active={activePage === 'Worker Management'} onClick={() => setActivePage('Worker Management')} isSidebarOpen={isSidebarOpen} />
                         <NavItem icon={<BookOpen size={16} />} text="Orders" active={activePage === 'Order Management'} onClick={() => setActivePage('Order Management')} isSidebarOpen={isSidebarOpen} />
-                        {/* ADDED: New NavItem for Addresses */}
                         <NavItem icon={<MapPin size={16} />} text="Addresses" active={activePage === 'Address Management'} onClick={() => setActivePage('Address Management')} isSidebarOpen={isSidebarOpen} />
                     </NavItem>
                      <NavItem icon={<Globe size={20} />} text="Marketing" isSidebarOpen={isSidebarOpen}>
