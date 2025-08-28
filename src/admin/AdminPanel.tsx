@@ -9,7 +9,7 @@ import WorkerManagementPage from './pages/WorkerManagementPage';
 import OrderManagementPage from './pages/OrderManagementPage';
 import AddressManagementPage from './pages/AddressManagementPage';
 import SettingsPage from './pages/SettingsPage';
-import {DataItem } from '../shared/types/types';
+import { DataItem, Notification } from '../shared/types/types';
 import { supabase } from '../shared/lib/supabaseClient';
 import Modal from './components/shared/Modal';
 import FormComponent from './components/shared/FormComponent';
@@ -21,6 +21,7 @@ const AdminPanel = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isDarkMode, setDarkMode] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const { users, orders, addresses, loading, refetchData } = useAdminData();
 
@@ -38,44 +39,50 @@ const AdminPanel = () => {
         setCurrentUser(session?.user ?? null);
     });
 
-    // --- FINAL, PRODUCTION-READY REALTIME LISTENER ---
-    // Changed channel name for more stability
-    const ordersChannel = supabase.channel('admin-dashboard')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders' },
+    // --- REALTIME LISTENER FOR NEW ORDERS ---
+    const ordersChannel = supabase.channel('orders-channel')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
-          console.log('Database change received!', payload);
-          // Refetch all data to keep the panel in sync
-          refetchData(); 
-          
-          if (payload.eventType === 'INSERT') {
-            alert(`🔔 New Order Received!\n\nService: ${payload.new.manpowerType}\nAddress: ${payload.new.address}`);
-          }
-          if (payload.eventType === 'UPDATE') {
-            if (payload.new.worker_id && !payload.old.worker_id) {
-                 alert(`✅ Worker Assigned!\n\nOrder for ${payload.new.manpowerType} has been accepted.`);
-            }
-          }
+          const newOrder = payload.new;
+          setNotifications(prev => [{
+            id: `order-${newOrder.id}`,
+            message: `New order for ${newOrder.manpowerType}.`,
+            type: 'order', timestamp: new Date(), isRead: false,
+          }, ...prev]);
+          refetchData();
         }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Successfully subscribed to real-time orders channel!');
+      ).subscribe();
+
+    // --- REALTIME LISTENER FOR NEW USERS ---
+    const profilesChannel = supabase.channel('profiles-channel')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' },
+        (payload) => {
+          const newUser = payload.new;
+          setNotifications(prev => [{
+            id: `user-${newUser.id}`,
+            message: `New user registered: ${newUser.name || newUser.email}.`,
+            type: 'user', timestamp: new Date(), isRead: false,
+          }, ...prev]);
+          refetchData();
         }
-      });
+      ).subscribe();
 
     return () => {
         authListener.subscription.unsubscribe();
-        supabase.removeChannel(ordersChannel); // Important: Clean up the listener
+        supabase.removeChannel(ordersChannel);
+        supabase.removeChannel(profilesChannel);
     };
   }, [refetchData]);
+
+  const markAsRead = (id: string) => {
+    setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = '/app';
   };
-
+  
   const handleAdd = (type: string, emptyState: Partial<DataItem>) => {
     setModalContent({ title: `Add New ${type}`, data: emptyState, type });
     setModalOpen(true);
@@ -93,7 +100,7 @@ const AdminPanel = () => {
       if (error) {
         alert(`Error deleting ${type}: ${error.message}`);
       } else {
-        refetchData(); // Refresh data after deletion
+        refetchData();
       }
     }
   };
@@ -113,7 +120,7 @@ const AdminPanel = () => {
     if (response.error) {
         alert(`Error saving ${modalContent.type}: ${response.error.message}`);
     } else {
-        refetchData(); // Refresh data after saving
+        refetchData();
         setModalOpen(false);
     }
   };
@@ -174,7 +181,15 @@ const AdminPanel = () => {
     <div className={`flex h-screen bg-gray-100 dark:bg-gray-900 font-sans ${isDarkMode ? 'dark' : ''}`}>
       <Sidebar isSidebarOpen={isSidebarOpen} activePage={activePage} setActivePage={setActivePage} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} isDarkMode={isDarkMode} setDarkMode={setDarkMode} onLogout={handleLogout} />
+        <Header 
+            isSidebarOpen={isSidebarOpen} 
+            setSidebarOpen={setSidebarOpen} 
+            isDarkMode={isDarkMode} 
+            setDarkMode={setDarkMode} 
+            onLogout={handleLogout}
+            notifications={notifications}
+            markAsRead={markAsRead}
+        />
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8">{renderPage()}</main>
       </div>
       <Modal isOpen={isModalOpen} onClose={() => setModalOpen(false)} title={modalContent.title}>
