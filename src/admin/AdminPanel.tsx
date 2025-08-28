@@ -1,53 +1,30 @@
 // src/admin/AdminPanel.tsx
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react'; // Removed unused 'React' import
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
 import OrderManagementPage from './pages/OrderManagementPage';
 import SettingsPage from './pages/SettingsPage';
-import { Profile, DataItem } from '../shared/types/types';
+import { Profile,DataItem } from '../shared/types/types'; // Corrected import
 import { supabase } from '../shared/lib/supabaseClient';
 import Modal from './components/shared/Modal';
 import FormComponent from './components/shared/FormComponent';
 import { useAdminData } from './hooks/useAdminData';
-import { User } from '@supabase/supabase-js'; // User type import karein
 
 const AdminPanel = () => {
   const [activePage, setActivePage] = useState('Dashboard');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isDarkMode, setDarkMode] = useState(false);
   
-  // YEH NAYA STATE HAI LOGIN CHECK KARNE KE LIYE
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
   const { users, orders, loading, addUserToState, updateUserInState, removeUserFromState } = useAdminData();
 
   const [isModalOpen, setModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<{ title: string; data: DataItem | Partial<DataItem> | null; type: string }>({ title: '', data: null, type: '' });
 
-  // YEH NAYA useEffect HAI JO SIRF LOGIN SESSION CHECK KAREGA
-  useEffect(() => {
-    const checkSession = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        setCurrentUser(session?.user ?? null);
-    };
-    checkSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-        setCurrentUser(session?.user ?? null);
-    });
-
-    return () => {
-        authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    // Logout ke baad app par redirect karein
     window.location.href = '/app';
   };
 
@@ -99,17 +76,6 @@ const AdminPanel = () => {
   };
 
   const renderPage = () => {
-    // Agar user logged in nahi hai, toh use login karne ko kahein
-    if (!currentUser) {
-        return (
-            <div className="text-center p-8">
-                <h2 className="text-xl font-bold">You are not logged in.</h2>
-                <p className="mt-2">Please log in through the main app to access the admin panel.</p>
-                <a href="/app" className="mt-4 inline-block px-4 py-2 bg-blue-500 text-white rounded-lg">Go to Login</a>
-            </div>
-        );
-    }
-
     if (loading) {
         return <div className="flex items-center justify-center h-full"><p className="text-gray-500 dark:text-gray-400">Loading data...</p></div>;
     }

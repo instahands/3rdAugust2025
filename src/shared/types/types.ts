@@ -22,12 +22,13 @@ export interface Order {
   subscriptionType: string;
   status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
   trackingStatus: 'Booked' | 'Assigned' | 'On the Way' | 'Completed';
-  profiles?: { name: string }; // For joined data
+  profiles?: { name: string }; 
 }
 
-// Defines the structure for a saved address
+// CORRECTED: The Address interface now includes user_id
 export interface Address {
     id: number;
+    user_id: string;
     address_type: string;
     street_address: string;
     city: string;
@@ -49,8 +50,8 @@ export interface Service {
     excluded: string[];
 }
 
-// A generic type for components that can handle different data, like the admin panel
-export type DataItem = Profile | Order;
+// CORRECTED: DataItem includes Address
+export type DataItem = Profile | Order | Address;
 
 // Defines coordinates for mapping
 export interface LocationCoords {
