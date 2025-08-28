@@ -132,7 +132,7 @@ const AdminPanel = () => {
         return <DashboardPage />;
       case 'User Management':
         return <UserManagementPage
-          users={users.filter(u => u.role === 'user')}
+          users={users.filter(u => u.role !== 'worker')}
           onAdd={() => handleAdd('User', { name: '', email: '', role: 'user' })}
           onEdit={(user) => handleEdit('User', user)}
           onDelete={(id) => handleDelete('User', id)}
