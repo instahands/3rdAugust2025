@@ -9,7 +9,7 @@ import WorkerManagementPage from './pages/WorkerManagementPage';
 import OrderManagementPage from './pages/OrderManagementPage';
 import AddressManagementPage from './pages/AddressManagementPage';
 import SettingsPage from './pages/SettingsPage';
-import {DataItem } from '../shared/types/types';
+import { DataItem } from '../shared/types/types';
 import { supabase } from '../shared/lib/supabaseClient';
 import Modal from './components/shared/Modal';
 import FormComponent from './components/shared/FormComponent';
@@ -38,19 +38,20 @@ const AdminPanel = () => {
         setCurrentUser(session?.user ?? null);
     });
 
-    // --- ENHANCED REALTIME LISTENER ---
-    console.log("Attempting to subscribe to Supabase Realtime...");
+    // --- FINAL, PRODUCTION-READY REALTIME LISTENER ---
     const ordersChannel = supabase.channel('custom-all-channel')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
         (payload) => {
-          console.log('SUCCESS: Realtime change received!', payload);
+          console.log('Database change received!', payload);
+          // Refetch all data to keep the panel in sync
           refetchData(); 
+          
           if (payload.eventType === 'INSERT') {
-            alert(`🔔 New Order Received!\n\nService: ${payload.new.manpowerType}`);
+            alert(`🔔 New Order Received!\n\nService: ${payload.new.manpowerType}\nAddress: ${payload.new.address}`);
           }
-           if (payload.eventType === 'UPDATE') {
+          if (payload.eventType === 'UPDATE') {
             if (payload.new.worker_id && !payload.old.worker_id) {
                  alert(`✅ Worker Assigned!\n\nOrder for ${payload.new.manpowerType} has been accepted.`);
             }
@@ -58,24 +59,14 @@ const AdminPanel = () => {
         }
       )
       .subscribe((status) => {
-        // This callback tells us the status of the connection
         if (status === 'SUBSCRIBED') {
-          console.log('✅ SUCCESSFULLY SUBSCRIBED to real-time orders channel!');
-        }
-        if (status === 'TIMED_OUT') {
-          console.error('❌ FAILED to subscribe. The connection timed out.');
-        }
-        if (status === 'CHANNEL_ERROR') {
-          console.error('❌ FAILED to subscribe due to a channel error.');
-        }
-        if (status === 'CLOSED') {
-            console.warn('Real-time channel was closed.');
+          console.log('✅ Successfully subscribed to real-time orders channel!');
         }
       });
 
     return () => {
         authListener.subscription.unsubscribe();
-        supabase.removeChannel(ordersChannel);
+        supabase.removeChannel(ordersChannel); // Important: Clean up the listener
     };
   }, [refetchData]);
 
