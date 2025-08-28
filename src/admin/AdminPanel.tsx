@@ -40,7 +40,7 @@ const AdminPanel = () => {
     });
 
     // --- REALTIME LISTENER FOR NEW ORDERS ---
-    const ordersChannel = supabase.channel('orders-channel')
+    const ordersChannel = supabase.channel('public:orders')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
           const newOrder = payload.new;
@@ -54,7 +54,7 @@ const AdminPanel = () => {
       ).subscribe();
 
     // --- REALTIME LISTENER FOR NEW USERS ---
-    const profilesChannel = supabase.channel('profiles-channel')
+    const profilesChannel = supabase.channel('public:profiles')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' },
         (payload) => {
           const newUser = payload.new;
