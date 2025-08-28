@@ -9,7 +9,7 @@ import WorkerManagementPage from './pages/WorkerManagementPage';
 import OrderManagementPage from './pages/OrderManagementPage';
 import AddressManagementPage from './pages/AddressManagementPage';
 import SettingsPage from './pages/SettingsPage';
-import { DataItem } from '../shared/types/types';
+import {DataItem } from '../shared/types/types';
 import { supabase } from '../shared/lib/supabaseClient';
 import Modal from './components/shared/Modal';
 import FormComponent from './components/shared/FormComponent';
@@ -39,7 +39,8 @@ const AdminPanel = () => {
     });
 
     // --- FINAL, PRODUCTION-READY REALTIME LISTENER ---
-    const ordersChannel = supabase.channel('custom-all-channel')
+    // Changed channel name for more stability
+    const ordersChannel = supabase.channel('admin-dashboard')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
