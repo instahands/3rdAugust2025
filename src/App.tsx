@@ -1,12 +1,14 @@
-// src/App.tsx (CORRECTED)
+// src/App.tsx (UPDATED WITH WORKER ROUTE)
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Import your page and layout components
-import LandingPage from "./app/pages/LandingPage.tsx";
+import LandingPage from "./app/pages/LandingPage"; // Assuming this exists
 import MainApp from "./MainApp"; 
-// CORRECTED: The import path now correctly points to the admin folder inside src
-import AdminPanel from "./admin/AdminPanel.tsx"; 
+import AdminPanel from "./admin/AdminPanel"; 
+
+// 1. Import the WorkerDashboard component
+import { WorkerDashboard } from "./worker/WorkerDashboard";
 
 function App() {
   return (
@@ -20,6 +22,9 @@ function App() {
 
         {/* Admin panel route */}
         <Route path="/admin/*" element={<AdminPanel />} />
+
+        {/* 2. Add the new route for the worker dashboard */}
+        <Route path="/worker/*" element={<WorkerDashboard />} />
       </Routes>
     </Router>
   );

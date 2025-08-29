@@ -1,15 +1,16 @@
 // src/admin/components/shared/FormComponent.tsx
-
 import { useState, useEffect } from 'react';
-import { DataItem } from '../../../shared/types/types'; // Corrected import
+import { DataItem } from '../../../shared/types/types';
 
 interface FormComponentProps {
   item: Partial<DataItem> | null;
   onSave: (item: Partial<DataItem>) => void;
   onCancel: () => void;
+  // --- FIX: Add the isNewWorker prop to the interface ---
+  isNewWorker?: boolean;
 }
 
-const FormComponent = ({ item, onSave, onCancel }: FormComponentProps) => {
+const FormComponent = ({ item, onSave, onCancel, isNewWorker }: FormComponentProps) => {
   const [formData, setFormData] = useState<Partial<DataItem> | null>(item);
 
   useEffect(() => {
@@ -18,7 +19,6 @@ const FormComponent = ({ item, onSave, onCancel }: FormComponentProps) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    // Added type for 'prev' to fix implicit any error
     setFormData((prev: Partial<DataItem> | null) => (prev ? { ...prev, [name]: value } : { [name]: value }));
   };
 
@@ -34,7 +34,8 @@ const FormComponent = ({ item, onSave, onCancel }: FormComponentProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {Object.keys(formData).map(key => {
-        if (key === 'id' || key === 'created_at' || key === 'user_id') return null;
+        // Hide non-editable fields and the password field which is handled separately
+        if (key === 'id' || key === 'created_at' || key === 'user_id' || key === 'password') return null;
 
         return (
           <div key={key}>
@@ -52,11 +53,29 @@ const FormComponent = ({ item, onSave, onCancel }: FormComponentProps) => {
           </div>
         );
       })}
+      
+      {isNewWorker && (
+        <div>
+          <label htmlFor="password"
+             className="block text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+             Password
+          </label>
+          <input
+              type="password"
+              id="password"
+              name="password"
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+           />
+        </div>
+      )}
+      
       <div className="flex justify-end gap-4 pt-4">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500"
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
         >
           Cancel
         </button>
@@ -70,5 +89,5 @@ const FormComponent = ({ item, onSave, onCancel }: FormComponentProps) => {
     </form>
   );
 };
-
 export default FormComponent;
+

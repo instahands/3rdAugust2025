@@ -9,37 +9,26 @@ import WorkerManagementPage from './pages/WorkerManagementPage';
 import OrderManagementPage from './pages/OrderManagementPage';
 import AddressManagementPage from './pages/AddressManagementPage';
 import SettingsPage from './pages/SettingsPage';
-import { DataItem, Notification } from '../shared/types/types';
+import { DataItem, Notification, Profile } from '../shared/types/types';
 import { supabase } from '../shared/lib/supabaseClient';
 import Modal from './components/shared/Modal';
 import FormComponent from './components/shared/FormComponent';
 import { useAdminData } from './hooks/useAdminData';
-import { User } from '@supabase/supabase-js';
 
 const AdminPanel = () => {
   const [activePage, setActivePage] = useState('Dashboard');
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [isDarkMode, setDarkMode] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const { users, orders, addresses, loading, refetchData } = useAdminData();
+  const workers = users.filter(u => u.role === 'worker');
 
   const [isModalOpen, setModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<{ title: string; data: DataItem | Partial<DataItem> | null; type: string }>({ title: '', data: null, type: '' });
 
   useEffect(() => {
-    const checkSession = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        setCurrentUser(session?.user ?? null);
-    };
-    checkSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-        setCurrentUser(session?.user ?? null);
-    });
-
-    // --- REALTIME LISTENER FOR NEW ORDERS ---
+    // --- REALTIME LISTENERS ---
     const ordersChannel = supabase.channel('public:orders')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
@@ -52,23 +41,23 @@ const AdminPanel = () => {
           refetchData();
         }
       ).subscribe();
-
-    // --- REALTIME LISTENER FOR NEW USERS ---
+      
     const profilesChannel = supabase.channel('public:profiles')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' },
         (payload) => {
-          const newUser = payload.new;
-          setNotifications(prev => [{
-            id: `user-${newUser.id}`,
-            message: `New user registered: ${newUser.name || newUser.email}.`,
-            type: 'user', timestamp: new Date(), isRead: false,
-          }, ...prev]);
+          const newUser = payload.new as Profile;
+          if (newUser.role === 'worker' && newUser.worker_status === 'pending') {
+             setNotifications(prev => [{
+                id: `user-${newUser.id}`,
+                message: `New worker registration: ${newUser.name || newUser.email}.`,
+                type: 'user', timestamp: new Date(), isRead: false,
+            }, ...prev]);
+          }
           refetchData();
         }
       ).subscribe();
 
     return () => {
-        authListener.subscription.unsubscribe();
         supabase.removeChannel(ordersChannel);
         supabase.removeChannel(profilesChannel);
     };
@@ -94,8 +83,8 @@ const AdminPanel = () => {
   };
 
   const handleDelete = async (type: string, id: string | number) => {
-    const tableName = type === 'User' ? 'profiles' : type === 'Order' ? 'orders' : 'addresses';
-    if (window.confirm(`Are you sure you want to delete this ${type} from the ${tableName} table?`)) {
+    const tableName = type === 'User' || type === 'Worker' ? 'profiles' : type === 'Order' ? 'orders' : 'addresses';
+    if (window.confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) {
       const { error } = await supabase.from(tableName).delete().eq('id', id);
       if (error) {
         alert(`Error deleting ${type}: ${error.message}`);
@@ -106,36 +95,67 @@ const AdminPanel = () => {
   };
   
   const handleSave = async (formData: Partial<DataItem>) => {
-    const isEditing = modalContent.data && 'id' in modalContent.data && modalContent.data.id;
-    const tableName = modalContent.type === 'User' ? 'profiles' : modalContent.type === 'Order' ? 'orders' : 'addresses';
-    
-    let response;
-    if (isEditing) {
-        const { id, ...updateData } = formData;
-        response = await supabase.from(tableName).update(updateData).eq('id', id).select().single();
+    const isNewWorker = modalContent.title === 'Add New Worker';
+
+    if (isNewWorker) {
+        try {
+            const { name, email, password } = formData as any;
+            if (!name || !email || !password) {
+                throw new Error("Name, email, and password are required.");
+            }
+
+            const { data, error } = await supabase.functions.invoke('create-worker', {
+                body: { name, email, password },
+            });
+
+            if (error) throw error;
+            console.log(data);
+
+        } catch (error: any) {
+            console.error("Failed to create worker:", error.message);
+            alert(`Error creating worker: ${error.message}`);
+        }
     } else {
-        response = await supabase.from(tableName).insert(formData).select().single();
+        const isEditing = modalContent.data && 'id' in modalContent.data && modalContent.data.id;
+        const tableName = modalContent.type === 'User' || modalContent.type === 'Worker' ? 'profiles' : modalContent.type === 'Order' ? 'orders' : 'addresses';
+        
+        let response;
+        if (isEditing) {
+            const { id, ...updateData } = formData;
+            response = await supabase.from(tableName).update(updateData).eq('id', id).select().single();
+        } else {
+            response = await supabase.from(tableName).insert(formData).select().single();
+        }
+
+        if (response.error) {
+            alert(`Error saving ${modalContent.type}: ${response.error.message}`);
+        }
     }
 
-    if (response.error) {
-        alert(`Error saving ${modalContent.type}: ${response.error.message}`);
-    } else {
-        refetchData();
-        setModalOpen(false);
-    }
+    refetchData();
+    setModalOpen(false);
+  };
+
+  const handleApproveWorker = async (workerId: string) => {
+      const { error } = await supabase
+          .from('profiles')
+          .update({ worker_status: 'approved' })
+          .eq('id', workerId);
+      if (error) console.error("Error approving worker:", error);
+      else refetchData();
+  };
+
+  const handleRejectWorker = async (workerId: string) => {
+      const { error } = await supabase
+          .from('profiles')
+          .update({ worker_status: 'rejected' })
+          .eq('id', workerId);
+      if (error) console.error("Error rejecting worker:", error);
+      else refetchData();
   };
 
   const renderPage = () => {
-    if (!currentUser) {
-        return (
-            <div className="text-center p-8">
-                <h2 className="text-xl font-bold">You are not logged in.</h2>
-                <p className="mt-2">Please log in through the main app to access the admin panel.</p>
-                <a href="/app" className="mt-4 inline-block px-4 py-2 bg-blue-500 text-white rounded-lg">Go to Login</a>
-            </div>
-        );
-    }
-    if (loading) {
+    if (loading && !users.length) {
         return <div className="flex items-center justify-center h-full"><p className="text-gray-500 dark:text-gray-400">Loading data...</p></div>;
     }
     
@@ -151,10 +171,12 @@ const AdminPanel = () => {
         />;
       case 'Worker Management':
         return <WorkerManagementPage
-          workers={users.filter(u => u.role === 'worker')}
-          onAdd={() => handleAdd('User', { name: '', email: '', role: 'worker' })}
-          onEdit={(worker) => handleEdit('User', worker)}
-          onDelete={(id) => handleDelete('User', id)}
+          workers={workers}
+          onAdd={() => handleAdd('Worker', { name: '', email: '', password: '', role: 'worker', worker_status: 'approved' })}
+          onEdit={(worker) => handleEdit('Worker', worker)}
+          onDelete={(id) => handleDelete('Worker', id)}
+          onApprove={handleApproveWorker}
+          onReject={handleRejectWorker}
         />;
       case 'Order Management':
         return <OrderManagementPage
@@ -193,10 +215,16 @@ const AdminPanel = () => {
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8">{renderPage()}</main>
       </div>
       <Modal isOpen={isModalOpen} onClose={() => setModalOpen(false)} title={modalContent.title}>
-          {modalContent.data && <FormComponent item={modalContent.data} onSave={handleSave} onCancel={() => setModalOpen(false)} />}
+          {modalContent.data && <FormComponent 
+            item={modalContent.data} 
+            onSave={handleSave} 
+            onCancel={() => setModalOpen(false)}
+            isNewWorker={modalContent.title === 'Add New Worker'}
+          />}
       </Modal>
     </div>
   );
 };
 
 export default AdminPanel;
+

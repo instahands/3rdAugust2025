@@ -6,6 +6,9 @@ export interface Profile {
   email: string;
   role: 'user' | 'admin' | 'worker';
   created_at: string;
+  worker_status?: 'pending' | 'approved' | 'rejected' | null;
+  // --- FIX: Add optional password for new worker creation form ---
+  password?: string;
 }
 
 export interface Order {
@@ -34,7 +37,6 @@ export interface Address {
     phone_number: string;
 }
 
-// --- NEW: Definition for a single notification ---
 export interface Notification {
   id: string;
   message: string;
@@ -45,7 +47,6 @@ export interface Notification {
 
 export type DataItem = Profile | Order | Address;
 
-// Other types (Service, LocationCoords) can be added here as needed
 export interface Service {
     name: string;
     manpowerType: string;
@@ -54,11 +55,11 @@ export interface Service {
     description: string;
     imageUrl: string;
     trainedTo: string[];
-    needs: string[];
     excluded: string[];
 }
 
 export interface LocationCoords {
-  lat: number;
-  lng: number;
+    lat: number;
+    lng: number;
 }
+
