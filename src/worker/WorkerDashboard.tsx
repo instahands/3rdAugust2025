@@ -23,15 +23,29 @@ export const WorkerDashboard = () => {
         setWorker(user);
 
         if (user) {
-            const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-            if (profile?.role === 'worker') {
-                setWorkerProfile(profile);
-            } else {
-                // If a non-worker user somehow gets here, log them out.
+            // Fetch the user's profile
+            const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+
+            // Handle potential errors, but don't log out for a missing profile
+            if (error && error.code !== 'PGRST116') { // PGRST116 means "no rows found", which is OK for a new user.
+                console.error("Error fetching worker profile:", error);
+                await supabase.auth.signOut(); // Log out only on actual DB errors
+                setWorker(null);
+                setWorkerProfile(null);
+            } else if (profile && profile.role !== 'worker') {
+                // If a profile exists but it's not for a worker, log them out.
+                console.warn("Authenticated user is not a worker. Logging out.");
                 await supabase.auth.signOut();
                 setWorker(null);
                 setWorkerProfile(null);
+            } else {
+                // If profile is found OR if it's null (new user), set it.
+                // The render logic below will correctly show the onboarding page.
+                setWorkerProfile(profile);
             }
+        } else {
+            // No user session, so clear the profile
+            setWorkerProfile(null);
         }
         setAuthLoading(false);
     }, []);
@@ -39,7 +53,7 @@ export const WorkerDashboard = () => {
     useEffect(() => {
         checkWorkerSession();
         const { data: authListener } = supabase.auth.onAuthStateChange(() => {
-            // This will automatically run when the user clicks the magic link
+            // This runs on SIGN_IN, SIGN_OUT, TOKEN_REFRESHED, etc.
             checkWorkerSession();
         });
         return () => {
@@ -62,11 +76,10 @@ export const WorkerDashboard = () => {
     }
 
     if (!worker) {
-        // --- FIX: Removed the onLoginSuccess prop ---
         return <LoginPage />;
     }
 
-    // New logic to handle different worker states
+    // This logic is now robust. If the profile doesn't exist yet (null) OR doesn't have a name, show onboarding.
     if (!workerProfile?.name) {
         return <WorkerOnboardingPage user={worker} onOnboardingComplete={checkWorkerSession} />;
     }
@@ -76,15 +89,16 @@ export const WorkerDashboard = () => {
     }
 
     if (workerProfile.worker_status === 'rejected') {
-        return <div className="flex flex-col items-center justify-center h-screen p-4 text-center">
-            <h2 className="text-xl font-bold">Application Not Approved</h2>
-            <p className="mt-2">Your profile could not be approved at this time. Please contact support for more information.</p>
-            <button onClick={handleLogout} className="mt-4 px-4 py-2 bg-gray-500 text-white rounded-md">Logout</button>
-        </div>;
+        return (
+            <div className="flex flex-col items-center justify-center h-screen p-4 text-center">
+                <h2 className="text-xl font-bold">Application Not Approved</h2>
+                <p className="mt-2">Your profile could not be approved. Please contact support.</p>
+                <button onClick={handleLogout} className="mt-4 px-4 py-2 bg-gray-500 text-white rounded-md">Logout</button>
+            </div>
+        );
     }
     
     if (workerProfile.worker_status === 'approved') {
-         // Existing Dashboard Logic
         const otpMessages: { [key in 'start' | 'complete']: { [key in 'en' | 'hi']: { title: string; message: string } } } = {
             start: { en: { title: 'Start Work OTP', message: 'Enter the 4-digit OTP from the customer to start the work.' }, hi: { title: 'काम शुरू करने के लिए OTP', message: 'काम शुरू करने के लिए ग्राहक से 4 अंकों का OTP दर्ज करें।' } },
             complete: { en: { title: 'Complete Work OTP', message: 'Enter the 4-digit OTP from the customer to complete the work.' }, hi: { title: 'काम पूरा करने के लिए OTP', message: 'काम पूरा करने के लिए ग्राहक से 4 अंकों का OTP दर्ज करें।' } }
@@ -109,3 +123,4 @@ export const WorkerDashboard = () => {
 
     return <div className="flex items-center justify-center h-screen">An unexpected error occurred. Please try again.</div>;
 };
+
