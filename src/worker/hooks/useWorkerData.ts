@@ -14,6 +14,8 @@ export const useWorkerData = (worker: User | null) => {
     const [otpConfig, setOtpConfig] = useState<{ isOpen: boolean; action: 'start' | 'complete' | null; jobId: number | null }>({ isOpen: false, action: null, jobId: null });
 
     const fetchJobs = useCallback(async () => {
+        // The check for the worker is now handled by the useEffect hook,
+        // but we keep this as an extra safety measure.
         if (!worker) return;
         setLoading(true);
 
@@ -29,8 +31,6 @@ export const useWorkerData = (worker: User | null) => {
             console.error("Error fetching jobs:", error);
             setJobs([]);
         } else if (data) {
-            // --- FIX: Map the database 'order' object to the frontend 'Job' type ---
-            // This translates the status values and flattens the customer name.
             const mappedJobs: Job[] = data.map((order: any) => ({
                 ...order,
                 customerName: order.customerProfile?.name || 'N/A',
@@ -43,9 +43,17 @@ export const useWorkerData = (worker: User | null) => {
         setLoading(false);
     }, [worker]);
 
+    // --- FIX: This useEffect is now more robust ---
+    // It will only call fetchJobs when the worker object is definitely available.
     useEffect(() => {
-        fetchJobs();
-    }, [fetchJobs]);
+        if (worker) {
+            fetchJobs();
+        } else {
+            // If there's no worker (e.g., on logout), clear the jobs list.
+            setJobs([]);
+            setLoading(false);
+        }
+    }, [worker, fetchJobs]);
 
     const acceptJob = async (jobId: number) => {
         if (!worker) return;
@@ -72,8 +80,6 @@ export const useWorkerData = (worker: User | null) => {
     
     const activeJob = jobs.find(job => job.id === activeJobId) || null;
 
-    // --- FIX: Update the filtering logic to use the new frontend statuses ---
-    // This logic now works correctly because the 'jobs' state contains the mapped data.
     const getJobsByStatus = (status: 'new' | 'ongoing' | 'completed') => {
         switch (status) {
             case 'new': return jobs.filter(j => j.status === 'new' && !j.worker_id);
