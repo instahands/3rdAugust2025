@@ -27,6 +27,7 @@ export const WorkerDashboard = () => {
             if (profile?.role === 'worker') {
                 setWorkerProfile(profile);
             } else {
+                // If a non-worker user somehow gets here, log them out.
                 await supabase.auth.signOut();
                 setWorker(null);
                 setWorkerProfile(null);
@@ -38,6 +39,7 @@ export const WorkerDashboard = () => {
     useEffect(() => {
         checkWorkerSession();
         const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+            // This will automatically run when the user clicks the magic link
             checkWorkerSession();
         });
         return () => {
@@ -60,7 +62,8 @@ export const WorkerDashboard = () => {
     }
 
     if (!worker) {
-        return <LoginPage onLoginSuccess={checkWorkerSession} />;
+        // --- FIX: Removed the onLoginSuccess prop ---
+        return <LoginPage />;
     }
 
     // New logic to handle different worker states
@@ -73,12 +76,16 @@ export const WorkerDashboard = () => {
     }
 
     if (workerProfile.worker_status === 'rejected') {
-        return <div>Your application was not approved. Please contact support.</div>;
+        return <div className="flex flex-col items-center justify-center h-screen p-4 text-center">
+            <h2 className="text-xl font-bold">Application Not Approved</h2>
+            <p className="mt-2">Your profile could not be approved at this time. Please contact support for more information.</p>
+            <button onClick={handleLogout} className="mt-4 px-4 py-2 bg-gray-500 text-white rounded-md">Logout</button>
+        </div>;
     }
     
     if (workerProfile.worker_status === 'approved') {
          // Existing Dashboard Logic
-        const otpMessages = {
+        const otpMessages: { [key in 'start' | 'complete']: { [key in 'en' | 'hi']: { title: string; message: string } } } = {
             start: { en: { title: 'Start Work OTP', message: 'Enter the 4-digit OTP from the customer to start the work.' }, hi: { title: 'काम शुरू करने के लिए OTP', message: 'काम शुरू करने के लिए ग्राहक से 4 अंकों का OTP दर्ज करें।' } },
             complete: { en: { title: 'Complete Work OTP', message: 'Enter the 4-digit OTP from the customer to complete the work.' }, hi: { title: 'काम पूरा करने के लिए OTP', message: 'काम पूरा करने के लिए ग्राहक से 4 अंकों का OTP दर्ज करें।' } }
         };
@@ -100,6 +107,5 @@ export const WorkerDashboard = () => {
         );
     }
 
-    // Fallback for any other state
-    return <div className="flex items-center justify-center h-screen">An unexpected error occurred.</div>;
+    return <div className="flex items-center justify-center h-screen">An unexpected error occurred. Please try again.</div>;
 };
