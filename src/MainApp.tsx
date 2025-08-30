@@ -1,4 +1,4 @@
-// src/MainApp.tsx (UPDATED TO CAPTURE REFERRAL CODE)
+// src/MainApp.tsx (CORRECTED)
 import { useState, useEffect } from 'react';
 import { supabase } from './shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -49,14 +49,11 @@ export default function MainApp() {
     const [dataVersion, setDataVersion] = useState(0);
     const refreshData = () => setDataVersion(v => v + 1);
 
-    // --- NEW: useEffect to capture referral code from URL ---
     useEffect(() => {
-        // This runs only once when the app first loads
         const hash = window.location.hash;
         if (hash.includes('#ref=')) {
             const code = hash.split('=')[1];
             if (code) {
-                // Store the referral code in local storage to use after sign-up
                 localStorage.setItem('referral_code', code);
                 console.log('Referral code captured:', code);
             }
@@ -107,24 +104,39 @@ export default function MainApp() {
 
     const handleLogout = async () => { await supabase.auth.signOut(); };
 
-    const addOrder = async (newOrderData: any) => {
-        if (!currentUser) return;
-        const orderToInsert = {
-            ...newOrderData, 
-            user_id: currentUser.id,
-            status: 'Pending',
-            trackingStatus: 'Booked'
-        };
-        const { data, error } = await supabase.from('orders').insert([orderToInsert]).select().single();
-        if (error) {
-            console.error("DATABASE ERROR:", error);
-            alert("Sorry, there was an error booking your service.");
-        } else {
-            setOrders(prev => [data, ...prev]);
-            setBookingDetails(data);
-            setPage('confirmation');
-        }
+    // --- THIS FUNCTION HAS BEEN CORRECTED TO FIX THE DATABASE ERROR ---
+   const addOrder = async (bookingInfo: any) => {
+    if (!currentUser) return;
+
+    // --- FINAL FIX ---
+    // The error happens because bookingInfo.service can be null on a page refresh.
+    // We now correctly get the service name from bookingDetails, which is reliable.
+    const serviceName = bookingDetails?.service?.name || 'Unknown Service';
+
+    const orderToInsert = {
+        user_id: currentUser.id,
+        address_id: bookingInfo.address.id,
+        service_name: serviceName, // Use the safely retrieved service name
+        date: bookingInfo.date,
+        time_slot: bookingInfo.timeSlot,
+        duration: bookingInfo.duration,
+        work_description: bookingInfo.workDescription,
+        price: bookingInfo.price, 
+        status: 'Pending',
+        tracking_status: 'Booked'
     };
+
+    const { data, error } = await supabase.from('orders').insert([orderToInsert]).select().single();
+    
+    if (error) {
+        console.error("DATABASE ERROR:", error);
+        alert("Sorry, there was an error booking your service. Check the console for details.");
+    } else {
+        setOrders(prev => [data, ...prev]);
+        setBookingDetails(data);
+        setPage('confirmation');
+    }
+};
 
     const viewServiceDetail = (service: Service) => {
         setSelectedService(service);
