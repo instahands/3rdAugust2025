@@ -13,35 +13,54 @@ export const useWorkerData = (worker: User | null) => {
     const [activeJobId, setActiveJobId] = useState<number | null>(null);
     const [otpConfig, setOtpConfig] = useState<{ isOpen: boolean; action: 'start' | 'complete' | null; jobId: number | null }>({ isOpen: false, action: null, jobId: null });
 
-    const fetchJobs = useCallback(async () => {
-        if (!worker) return;
-        setLoading(true);
+    // src/worker/hooks/useWorkerData.ts
 
-        const { data, error } = await supabase
-            .from('orders')
-            .select(`
-                *,
-                customerProfile:profiles!user_id(name)
-            `)
-            .or(`status.eq.Pending,worker_id.eq.${worker.id}`);
+// src/worker/hooks/useWorkerData.ts
 
-        if (error) {
-            console.error("Error fetching jobs:", error);
-            setJobs([]);
-        } else if (data) {
-            // --- FIX: Map the database 'order' object to the frontend 'Job' type ---
-            // This translates the status values and flattens the customer name.
-            const mappedJobs: Job[] = data.map((order: any) => ({
-                ...order,
-                customerName: order.customerProfile?.name || 'N/A',
-                status: order.status === 'Pending' ? 'new' 
-                      : order.status === 'Assigned' ? 'ongoing' 
-                      : 'completed',
-            }));
-            setJobs(mappedJobs);
-        }
-        setLoading(false);
-    }, [worker]);
+const fetchJobs = useCallback(async () => {
+    if (!worker) return;
+    setLoading(true);
+
+    // This query now correctly joins the address details
+    const { data, error } = await supabase
+        .from('orders')
+        .select(`
+            *,
+            customerProfile:profiles!user_id(name, phone),
+            address:addresses!address_id(*)
+        `)
+        .or(`status.eq.Pending,worker_id.eq.${worker.id}`);
+
+    if (error) {
+        console.error("Error fetching jobs:", error);
+        setJobs([]);
+    } else if (data) {
+        // --- THIS IS THE FIX ---
+        const mappedJobs: Job[] = data.map((order: any) => ({
+            ...order, // 1. Spread the original order to include all its properties
+            
+            // 2. Map or overwrite fields for the worker dashboard
+            service_en: order.service_name,
+            service_hi: order.service_name,
+            customerName: order.customerProfile?.name || 'N/A',
+            address: order.address ? `${order.address.street_address}, ${order.address.city}` : 'Address not found',
+            dateTime: `${new Date(order.date).toDateString()} at ${order.time_slot}`,
+            earning: order.price || 0,
+            status: order.worker_id ? (order.status === 'Completed' ? 'completed' : 'ongoing') : 'new',
+            statusDetail: 'pending',
+            workDetails_en: order.work_description,
+            workDetails_hi: order.work_description,
+            distance: '5 km', // Placeholder
+            mapUrl: 'https://www.google.com/maps', // Placeholder
+            directionsUrl: 'https://www.google.com/maps', // Placeholder
+            startTime: order.startTime || null, // Assuming startTime might exist on order
+            endTime: order.endTime || null,
+        }));
+
+        setJobs(mappedJobs);
+    }
+    setLoading(false);
+}, [worker]);
 
     useEffect(() => {
         fetchJobs();
