@@ -47,7 +47,7 @@ export default function ServiceDetailModal({ service, onClose, startBooking }: S
                         <h3 className="text-lg font-bold text-gray-800 mb-3">What we need from you</h3>
                         <ul className="space-y-2">
                             {/* --- MODIFIED: Added key and type for item --- */}
-                            {service.needs.map((item: string) => (
+                            {service.needs && service.needs.map((item: string) => (
                                 <li key={item} className="flex items-start">
                                     <CheckCircleIcon />
                                     <span className="ml-3 text-gray-700">{item}</span>

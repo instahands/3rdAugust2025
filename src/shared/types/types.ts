@@ -56,6 +56,7 @@ export interface Service {
     imageUrl: string;
     trainedTo: string[];
     excluded: string[];
+    needs?: string[]; 
 }
 
 export interface LocationCoords {
