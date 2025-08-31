@@ -13,7 +13,7 @@ interface OrderDetailsPageProps {
 export const OrderDetailsPage = ({ job, language, onBack, onShowOtp }: OrderDetailsPageProps) => {
   const ActionButton = () => {
     // --- THIS IS THE FIX ---
-    // The component now correctly uses 'tracking_status'
+    // The component now correctly uses 'tracking_status' with snake_case
     if (job.tracking_status === 'Assigned') {
       return <button onClick={() => onShowOtp(job.id, 'start')} className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600">{language === 'en' ? 'Start Work' : 'काम शुरू करें'}</button>;
     }
@@ -29,7 +29,7 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp }: OrderDeta
         <button onClick={onBack} className="mr-4">&larr;</button>
         <h2 className="text-lg font-bold">{language === 'en' ? 'Order Details' : 'ऑर्डर विवरण'}</h2>
       </header>
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 pb-20">
         <div className="p-4 bg-white rounded-lg shadow-sm">
             <h3 className="font-bold text-lg">{language === 'en' ? job.service_en : job.service_hi}</h3>
             <p className="text-sm text-gray-500">{job.dateTime}</p>
