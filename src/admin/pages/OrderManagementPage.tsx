@@ -1,7 +1,7 @@
-// src/admin/pages/OrderManagementPage.tsx
+// src/admin/pages/OrderManagementPage.tsx (FINAL, CORRECTED CODE)
 
 import ManagementPage from '../components/shared/ManagementPage';
-import { Order } from '../../shared/types/types'; // Corrected import
+import { Order } from '../../shared/types/types';
 
 interface OrderManagementPageProps {
   orders: Order[];
@@ -18,12 +18,13 @@ const OrderManagementPage = ({ orders, onAdd, onEdit, onDelete }: OrderManagemen
       render: (item: Order) => <span className="font-mono text-xs">{item.id.toString().substring(0, 8)}</span>
     },
     {
-      key: 'manpowerType' as keyof Order,
+      // --- THIS IS THE FIX ---
+      // The key and render function now use 'service_name'
+      key: 'service_name' as keyof Order,
       header: 'Service',
       render: (item: Order) => (
         <div>
-          <p className="font-semibold text-gray-800 dark:text-white">{item.manpowerType}</p>
-          <p className="text-xs text-gray-500">{item.subscriptionType}</p>
+          <p className="font-semibold text-gray-800 dark:text-white">{item.service_name}</p>
         </div>
       )
     },
@@ -45,7 +46,7 @@ const OrderManagementPage = ({ orders, onAdd, onEdit, onDelete }: OrderManagemen
         </span>
       )
     },
-    { key: 'actions' as const, header: 'Actions' }
+    { key: 'actions' as const, header: 'Actions' },
   ];
 
   return (

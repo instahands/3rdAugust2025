@@ -1,18 +1,9 @@
-// src/pages/OrdersPage.tsx (FIXED PADDING)
+// src/app/pages/OrdersPage.tsx (CORRECTED)
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../../shared/lib/supabaseClient';
 import OrderCard from '../components/orders/OrderCard';
-
-interface Order {
-    id: string;
-    date: string;
-    manpowerType: string;
-    subscriptionType: string;
-    status: string;
-    trackingStatus: string;
-    address: string;
-}
+import { Order } from '../../shared/types/types'; // Import the correct Order type
 
 interface OrdersPageProps {
     setPage: (page: string) => void;
@@ -28,9 +19,15 @@ export default function OrdersPage({ setPage, currentPage }: OrdersPageProps) {
     useEffect(() => {
         const fetchOrders = async () => {
             setLoading(true);
+
+            // --- THIS IS THE FIX ---
+            // The .select() query now joins the address details for each order.
             const { data, error } = await supabase
                 .from('orders')
-                .select('*')
+                .select(`
+                    *,
+                    address:addresses!address_id(*)
+                `)
                 .order('date', { ascending: false });
 
             if (error) {
@@ -39,8 +36,11 @@ export default function OrdersPage({ setPage, currentPage }: OrdersPageProps) {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
-                setUpcomingOrders(data.filter(order => new Date(order.date) >= today));
-                setPastOrders(data.filter(order => new Date(order.date) < today));
+                // Ensure data is treated as the correct type
+                const typedData = data as any[];
+
+                setUpcomingOrders(typedData.filter((order: any) => new Date(order.date) >= today));
+                setPastOrders(typedData.filter((order: any) => new Date(order.date) < today));
             }
             setLoading(false);
         };
@@ -71,7 +71,6 @@ export default function OrdersPage({ setPage, currentPage }: OrdersPageProps) {
     };
 
     return (
-        // FIX: Added pb-32 for padding to prevent overlap with the bottom nav bar
         <div className="max-w-4xl mx-auto px-4 pt-4 pb-32">
             <h2 className="text-3xl font-bold text-gray-800 mb-6">My Orders</h2>
             <div className="flex border-b">

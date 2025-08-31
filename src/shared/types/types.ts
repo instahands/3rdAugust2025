@@ -14,18 +14,23 @@ export interface Profile {
 export interface Order {
   id: number;
   user_id: string;
+  worker_id?: string;
+  address_id?: number;
   date: string;
   duration: number;
-  timeSlot: string;
-  address: string;
-  workDescription: string;
-  manpowerType: string;
-  subscriptionType: string;
-  status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
-  trackingStatus: 'Booked' | 'Assigned' | 'On the Way' | 'Completed';
-  worker_id?: string;
-}
+  
+  // --- FIX: Use snake_case to match the database ---
+  service_name: string; 
+  time_slot: string;
+  work_description: string;
+  tracking_status: 'Booked' | 'Assigned' | 'On the Way' | 'Completed';
+  
+  // --- FIX: Make 'address' an optional Address object, not a string ---
+  address?: Address | null; 
 
+  price?: number;
+  status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
+}
 export interface Address {
     id: number;
     user_id: string;
