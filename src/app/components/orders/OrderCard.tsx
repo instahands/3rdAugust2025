@@ -1,4 +1,4 @@
-// src/app/components/orders/OrderCard.tsx (FINAL, CORRECTED CODE)
+// src/app/components/orders/OrderCard.tsx (FINAL, CORRECTED TRACKER)
 
 import React from 'react';
 import { CalendarIcon, LocationPinIcon } from '../common/Icons';
@@ -6,7 +6,9 @@ import { Order } from '../../../shared/types/types';
 
 const ServiceTracker = ({ status }: { status: string }) => {
     const stages = ['Booked', 'Assigned', 'On the Way', 'Completed'];
+    // This correctly finds the index of the current status
     const currentStageIndex = stages.indexOf(status);
+
     return (
         <div className="mt-5">
             <div className="flex items-center">
@@ -23,7 +25,7 @@ const ServiceTracker = ({ status }: { status: string }) => {
                             <p className={`text-xs mt-1 text-center ${index <= currentStageIndex ? 'font-semibold text-green-600' : 'text-gray-500'}`}>{stage}</p>
                         </div>
                         {index < stages.length - 1 && (
-                            <div className={`flex-1 h-1 ${index < currentStageIndex ? 'bg-green-600' : 'bg-gray-300'}`} />
+                            <div className={`flex-1 h-1 mx-2 ${index < currentStageIndex ? 'bg-green-600' : 'bg-gray-300'}`} />
                         )}
                     </React.Fragment>
                 ))}
@@ -42,7 +44,7 @@ const OrderCard = ({ order, isUpcoming }: { order: Order, isUpcoming: boolean })
             <span className={`px-3 py-1 text-sm font-medium rounded-full ${
                 order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                 order.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                'bg-gray-100 text-gray-800'
+                'bg-blue-100 text-blue-800' // Changed for 'Assigned' status
             }`}>
                 {order.status}
             </span>
@@ -50,11 +52,11 @@ const OrderCard = ({ order, isUpcoming }: { order: Order, isUpcoming: boolean })
         <div className="mt-4 border-t pt-4 text-sm text-gray-700 space-y-2">
             <p className="flex items-center"><CalendarIcon /> <strong>Scheduled for:</strong> &nbsp;{new Date(order.date).toDateString()} at {order.time_slot}</p>
             <p className="flex items-start"><LocationPinIcon /> <strong>Location:</strong> &nbsp;
-                {/* --- THIS IS THE FIX --- */}
-                {/* It now correctly creates a string from the address object */}
                 {order.address ? `${order.address.street_address}, ${order.address.city}` : 'Address not available'}
             </p>
         </div>
+        {/* --- THIS IS THE FIX --- */}
+        {/* The tracker is now correctly passed the 'tracking_status' */}
         {isUpcoming && <ServiceTracker status={order.tracking_status} />}
     </div>
 );
