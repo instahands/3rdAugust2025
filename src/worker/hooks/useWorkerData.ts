@@ -1,4 +1,4 @@
-// src/worker/hooks/useWorkerData.ts (FINAL, CORRECTED)
+// src/worker/hooks/useWorkerData.ts (FINAL, CORRECTED MAP URLS)
 
 import { useState, useEffect, useCallback } from 'react';
 import { Job } from '../types/workerTypes';
@@ -30,24 +30,37 @@ export const useWorkerData = (worker: User | null) => {
             console.error("Error fetching jobs:", error);
             setJobs([]);
         } else if (data) {
-            const mappedJobs: Job[] = data.map((order: any) => ({
-                ...order,
-                service_en: order.service_name,
-                service_hi: order.service_name,
-                customerName: order.customerProfile?.name || 'N/A',
-                address: order.address ? `${order.address.street_address}, ${order.address.city}` : 'Address not found',
-                dateTime: `${new Date(order.date).toDateString()} at ${order.time_slot}`,
-                earning: order.price || 0,
-                status: order.worker_id ? (order.status === 'Completed' ? 'completed' : 'ongoing') : 'new',
-                statusDetail: 'pending',
-                workDetails_en: order.work_description,
-                workDetails_hi: order.work_description,
-                distance: '5 km', // Placeholder
-                mapUrl: 'https://maps.google.com/maps?q=' + (order.address ? `${order.address.street_address}, ${order.address.city}` : ''), // Placeholder for map URL
-                directionsUrl: 'https://maps.google.com/maps/dir/?api=1&destination=' + (order.address ? `${order.address.street_address}, ${order.address.city}` : ''), // Placeholder for directions
-                startTime: order.startTime || null,
-                endTime: order.endTime || null,
-            }));
+            const mappedJobs: Job[] = data.map((order: any) => {
+                
+                // --- THIS IS THE FIX ---
+                // Generate real Google Maps URLs if an address exists
+                const addressText = order.address ? `${order.address.street_address}, ${order.address.city}` : '';
+                const mapUrl = order.address 
+                    ? `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(addressText)}`
+                    : '';
+                const directionsUrl = order.address
+                    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addressText)}`
+                    : '';
+
+                return {
+                    ...order,
+                    service_en: order.service_name,
+                    service_hi: order.service_name,
+                    customerName: order.customerProfile?.name || 'N/A',
+                    address: addressText || 'Address not found',
+                    dateTime: `${new Date(order.date).toDateString()} at ${order.time_slot}`,
+                    earning: order.price || 0,
+                    status: order.worker_id ? (order.status === 'Completed' ? 'completed' : 'ongoing') : 'new',
+                    statusDetail: 'pending',
+                    workDetails_en: order.work_description,
+                    workDetails_hi: order.work_description,
+                    distance: '5 km', // Placeholder
+                    mapUrl: mapUrl, // Use the real URL
+                    directionsUrl: directionsUrl, // Use the real URL
+                    startTime: order.startTime || null,
+                    endTime: order.endTime || null,
+                };
+            });
             setJobs(mappedJobs);
         }
         setLoading(false);
@@ -57,6 +70,7 @@ export const useWorkerData = (worker: User | null) => {
         fetchJobs();
     }, [fetchJobs]);
     
+    // Accept, Verify OTP, and other functions remain the same
     const acceptJob = async (jobId: number) => {
         if (!worker) return;
         const { error } = await supabase
