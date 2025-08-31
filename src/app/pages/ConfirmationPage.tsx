@@ -4,6 +4,7 @@ import { CalendarIcon, ClockIcon, LocationPinIcon } from '../components/common/I
 
 export default function ConfirmationPage({ setPage, bookingDetails }: any) {
     if (!bookingDetails) {
+        // This is a fallback in case the page is accessed directly
         return (
             <div className="text-center max-w-2xl mx-auto px-4 pt-16 pb-32">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">No booking details found.</h2>
@@ -15,14 +16,13 @@ export default function ConfirmationPage({ setPage, bookingDetails }: any) {
     }
 
     // --- THIS IS THE FIX ---
-    // Safely access the properties from the final bookingDetails object.
-    // The `service` and `address` objects are now nested correctly.
+    // Safely access and format the properties from the final bookingDetails object.
     const serviceName = bookingDetails.service?.name || bookingDetails.service_name || 'Service';
     const addressString = bookingDetails.address 
         ? `${bookingDetails.address.street_address}, ${bookingDetails.address.city}` 
         : 'Address details are being processed.';
     const orderId = bookingDetails.id?.toString().substring(0, 8) || 'N/A';
-    const timeSlot = bookingDetails.time_slot || bookingDetails.timeSlot; // Handles both snake_case and camelCase
+    const timeSlot = bookingDetails.time_slot || bookingDetails.timeSlot;
 
     return (
         <div className="text-center max-w-2xl mx-auto px-4 pt-16 pb-32">

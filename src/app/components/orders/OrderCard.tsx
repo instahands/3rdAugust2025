@@ -1,13 +1,12 @@
-// src/components/orders/OrderCard.tsx (UPDATED)
+// src/app/components/orders/OrderCard.tsx (FINAL, CORRECTED CODE)
 
 import React from 'react';
-// --- NEW: Import the icons from the central file ---
 import { CalendarIcon, LocationPinIcon } from '../common/Icons';
+import { Order } from '../../../shared/types/types';
 
 const ServiceTracker = ({ status }: { status: string }) => {
     const stages = ['Booked', 'Assigned', 'On the Way', 'Completed'];
     const currentStageIndex = stages.indexOf(status);
-
     return (
         <div className="mt-5">
             <div className="flex items-center">
@@ -33,11 +32,11 @@ const ServiceTracker = ({ status }: { status: string }) => {
     );
 };
 
-const OrderCard = ({ order, isUpcoming }: { order: any, isUpcoming: boolean }) => (
+const OrderCard = ({ order, isUpcoming }: { order: Order, isUpcoming: boolean }) => (
     <div className="bg-white p-5 rounded-lg shadow-md border border-gray-200">
         <div className="flex justify-between items-start">
             <div>
-                <h3 className="text-lg font-semibold text-green-700">{order.manpowerType} - {order.subscriptionType}</h3>
+                <h3 className="text-lg font-semibold text-green-700">{order.service_name}</h3>
                 <p className="text-sm text-gray-500">Order ID: {order.id?.toString().substring(0, 8)}</p>
             </div>
             <span className={`px-3 py-1 text-sm font-medium rounded-full ${
@@ -49,10 +48,14 @@ const OrderCard = ({ order, isUpcoming }: { order: any, isUpcoming: boolean }) =
             </span>
         </div>
         <div className="mt-4 border-t pt-4 text-sm text-gray-700 space-y-2">
-            <p className="flex items-center"><CalendarIcon /> <strong>Scheduled for:</strong> &nbsp;{new Date(order.date).toDateString()} at {order.timeSlot}</p>
-            <p className="flex items-start"><LocationPinIcon /> <strong>Location:</strong> &nbsp;{order.address}</p>
+            <p className="flex items-center"><CalendarIcon /> <strong>Scheduled for:</strong> &nbsp;{new Date(order.date).toDateString()} at {order.time_slot}</p>
+            <p className="flex items-start"><LocationPinIcon /> <strong>Location:</strong> &nbsp;
+                {/* --- THIS IS THE FIX --- */}
+                {/* It now correctly creates a string from the address object */}
+                {order.address ? `${order.address.street_address}, ${order.address.city}` : 'Address not available'}
+            </p>
         </div>
-        {isUpcoming && <ServiceTracker status={order.trackingStatus} />}
+        {isUpcoming && <ServiceTracker status={order.tracking_status} />}
     </div>
 );
 
