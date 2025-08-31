@@ -1,4 +1,4 @@
-// src/worker/hooks/useWorkerData.ts (FINAL, CORRECTED MAP URLS)
+// src/worker/hooks/useWorkerData.ts (FINAL, CORRECT MAP URLS)
 
 import { useState, useEffect, useCallback } from 'react';
 import { Job } from '../types/workerTypes';
@@ -33,13 +33,17 @@ export const useWorkerData = (worker: User | null) => {
             const mappedJobs: Job[] = data.map((order: any) => {
                 
                 // --- THIS IS THE FIX ---
-                // Generate real Google Maps URLs if an address exists
-                const addressText = order.address ? `${order.address.street_address}, ${order.address.city}` : '';
-                const mapUrl = order.address 
-                    ? `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(addressText)}`
+                const addressText = order.address ? `${order.address.street_address}, ${order.address.city}, ${order.address.state}` : '';
+                const encodedAddress = encodeURIComponent(addressText);
+                
+                // Use the correct Google Maps Embed API URL format
+                const mapUrl = addressText
+                    ? `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodedAddress}`
                     : '';
-                const directionsUrl = order.address
-                    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addressText)}`
+                
+                // Use the correct Google Maps Directions URL format
+                const directionsUrl = addressText
+                    ? `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`
                     : '';
 
                 return {
@@ -55,8 +59,8 @@ export const useWorkerData = (worker: User | null) => {
                     workDetails_en: order.work_description,
                     workDetails_hi: order.work_description,
                     distance: '5 km', // Placeholder
-                    mapUrl: mapUrl, // Use the real URL
-                    directionsUrl: directionsUrl, // Use the real URL
+                    mapUrl: mapUrl,
+                    directionsUrl: directionsUrl,
                     startTime: order.startTime || null,
                     endTime: order.endTime || null,
                 };
@@ -70,7 +74,7 @@ export const useWorkerData = (worker: User | null) => {
         fetchJobs();
     }, [fetchJobs]);
     
-    // Accept, Verify OTP, and other functions remain the same
+    // All other functions (acceptJob, verifyOtp, etc.) remain the same
     const acceptJob = async (jobId: number) => {
         if (!worker) return;
         const { error } = await supabase
