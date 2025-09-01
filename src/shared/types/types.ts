@@ -9,6 +9,7 @@ export interface Profile {
   worker_status?: 'pending' | 'approved' | 'rejected' | null;
   // --- FIX: Add optional password for new worker creation form ---
   password?: string;
+  phone?: string;
 }
 
 export interface Order {
@@ -18,19 +19,19 @@ export interface Order {
   address_id?: number;
   date: string;
   duration: number;
-  
   // --- FIX: Use snake_case to match the database ---
   service_name: string; 
   time_slot: string;
   work_description: string;
   tracking_status: 'Booked' | 'Assigned' | 'On the Way' | 'Completed';
-  
   // --- FIX: Make 'address' an optional Address object, not a string ---
   address?: Address | null; 
-
   price?: number;
   status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
+  otp?: string; 
+  worker?: Profile | null; 
 }
+
 export interface Address {
     id: number;
     user_id: string;

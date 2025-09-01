@@ -1,54 +1,30 @@
-// src/app/pages/OrdersPage.tsx (CORRECTED)
+// src/app/pages/OrdersPage.tsx (FINAL, CORRECTED)
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../../shared/lib/supabaseClient';
 import OrderCard from '../components/orders/OrderCard';
-import { Order } from '../../shared/types/types'; // Import the correct Order type
+import { Order } from '../../shared/types/types';
 
 interface OrdersPageProps {
     setPage: (page: string) => void;
-    currentPage: string;
+    orders: Order[];
+    viewOrderStatus: (order: Order) => void;
 }
 
-export default function OrdersPage({ setPage, currentPage }: OrdersPageProps) {
+export default function OrdersPage({ setPage, orders, viewOrderStatus }: OrdersPageProps) {
     const [activeTab, setActiveTab] = useState('upcoming');
     const [upcomingOrders, setUpcomingOrders] = useState<Order[]>([]);
     const [pastOrders, setPastOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchOrders = async () => {
-            setLoading(true);
+        setLoading(true);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-            // --- THIS IS THE FIX ---
-            // The .select() query now joins the address details for each order.
-            const { data, error } = await supabase
-                .from('orders')
-                .select(`
-                    *,
-                    address:addresses!address_id(*)
-                `)
-                .order('date', { ascending: false });
-
-            if (error) {
-                console.error("Error fetching orders:", error);
-            } else if (data) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-
-                // Ensure data is treated as the correct type
-                const typedData = data as any[];
-
-                setUpcomingOrders(typedData.filter((order: any) => new Date(order.date) >= today));
-                setPastOrders(typedData.filter((order: any) => new Date(order.date) < today));
-            }
-            setLoading(false);
-        };
-        
-        if (currentPage === 'orders') {
-            fetchOrders();
-        }
-    }, [currentPage]);
+        setUpcomingOrders(orders.filter(order => new Date(order.date) >= today));
+        setPastOrders(orders.filter(order => new Date(order.date) < today));
+        setLoading(false);
+    }, [orders]);
 
     const OrderList = ({ orders, isUpcoming }: { orders: Order[], isUpcoming: boolean }) => {
         if (orders.length === 0) {
@@ -65,7 +41,7 @@ export default function OrdersPage({ setPage, currentPage }: OrdersPageProps) {
         }
         return (
             <div className="space-y-4 mt-4">
-                {orders.map((order: Order) => <OrderCard key={order.id} order={order} isUpcoming={isUpcoming} />)}
+                {orders.map((order: Order) => <OrderCard key={order.id} order={order} isUpcoming={isUpcoming} onCardClick={viewOrderStatus} />)}
             </div>
         );
     };

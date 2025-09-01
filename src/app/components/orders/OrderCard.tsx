@@ -1,4 +1,4 @@
-// src/app/components/orders/OrderCard.tsx (FINAL, CORRECTED TRACKER)
+// src/app/components/orders/OrderCard.tsx (FINAL, CORRECTED)
 
 import React from 'react';
 import { CalendarIcon, LocationPinIcon } from '../common/Icons';
@@ -6,7 +6,6 @@ import { Order } from '../../../shared/types/types';
 
 const ServiceTracker = ({ status }: { status: string }) => {
     const stages = ['Booked', 'Assigned', 'On the Way', 'Completed'];
-    // This correctly finds the index of the current status
     const currentStageIndex = stages.indexOf(status);
 
     return (
@@ -14,18 +13,14 @@ const ServiceTracker = ({ status }: { status: string }) => {
             <div className="flex items-center">
                 {stages.map((stage, index) => (
                     <React.Fragment key={stage}>
-                        <div className="flex flex-col items-center">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${index <= currentStageIndex ? 'bg-green-600' : 'bg-gray-300'}`}>
-                                {index < currentStageIndex ? (
-                                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                                ) : (
-                                    <div className={`w-3 h-3 rounded-full ${index === currentStageIndex ? 'bg-white' : 'bg-gray-400'}`} />
-                                )}
+                        <div className="flex flex-col items-center flex-1">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center z-10 ${index <= currentStageIndex ? 'bg-green-600' : 'bg-gray-300'}`}>
+                                {index < currentStageIndex && <span className="text-white">✔</span>}
                             </div>
-                            <p className={`text-xs mt-1 text-center ${index <= currentStageIndex ? 'font-semibold text-green-600' : 'text-gray-500'}`}>{stage}</p>
+                            <p className={`text-xs mt-2 text-center ${index <= currentStageIndex ? 'font-semibold text-green-600' : 'text-gray-500'}`}>{stage}</p>
                         </div>
                         {index < stages.length - 1 && (
-                            <div className={`flex-1 h-1 mx-2 ${index < currentStageIndex ? 'bg-green-600' : 'bg-gray-300'}`} />
+                            <div className={`flex-1 h-1 -mx-2 ${index < currentStageIndex ? 'bg-green-600' : 'bg-gray-300'}`} />
                         )}
                     </React.Fragment>
                 ))}
@@ -34,8 +29,16 @@ const ServiceTracker = ({ status }: { status: string }) => {
     );
 };
 
-const OrderCard = ({ order, isUpcoming }: { order: Order, isUpcoming: boolean }) => (
-    <div className="bg-white p-5 rounded-lg shadow-md border border-gray-200">
+// --- FIX: Props interface now includes onCardClick ---
+interface OrderCardProps {
+    order: Order;
+    isUpcoming: boolean;
+    onCardClick: (order: Order) => void;
+}
+
+const OrderCard = ({ order, isUpcoming, onCardClick }: OrderCardProps) => (
+    // --- FIX: The entire card is now a clickable button ---
+    <div onClick={() => onCardClick(order)} className="bg-white p-5 rounded-lg shadow-md border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow">
         <div className="flex justify-between items-start">
             <div>
                 <h3 className="text-lg font-semibold text-green-700">{order.service_name}</h3>
@@ -44,7 +47,7 @@ const OrderCard = ({ order, isUpcoming }: { order: Order, isUpcoming: boolean })
             <span className={`px-3 py-1 text-sm font-medium rounded-full ${
                 order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
                 order.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                'bg-blue-100 text-blue-800' // Changed for 'Assigned' status
+                'bg-blue-100 text-blue-800'
             }`}>
                 {order.status}
             </span>
@@ -55,8 +58,6 @@ const OrderCard = ({ order, isUpcoming }: { order: Order, isUpcoming: boolean })
                 {order.address ? `${order.address.street_address}, ${order.address.city}` : 'Address not available'}
             </p>
         </div>
-        {/* --- THIS IS THE FIX --- */}
-        {/* The tracker is now correctly passed the 'tracking_status' */}
         {isUpcoming && <ServiceTracker status={order.tracking_status} />}
     </div>
 );
