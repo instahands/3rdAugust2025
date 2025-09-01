@@ -1,9 +1,9 @@
-// src/worker/components/details/Timer.tsx
+// src/worker/components/details/Timer.tsx (FINAL, CORRECTED)
 import React, { useState, useEffect } from 'react';
 
 interface TimerProps {
-    startTime: number | null;
-    endTime?: number | null;
+    startTime: string | null;
+    endTime?: string | null;
     language: 'en' | 'hi';
     isCompleted: boolean;
 }
@@ -18,30 +18,31 @@ const formatDuration = (ms: number) => {
 };
 
 export const Timer: React.FC<TimerProps> = ({ startTime, endTime, language, isCompleted }) => {
-    const [elapsedTime, setElapsedTime] = useState(startTime ? Date.now() - startTime : 0);
+    const [elapsedTime, setElapsedTime] = useState(startTime ? new Date().getTime() - new Date(startTime).getTime() : 0);
 
     useEffect(() => {
         if (isCompleted || !startTime) return;
-
         const interval = setInterval(() => {
-            setElapsedTime(Date.now() - startTime);
+            if (startTime) { // Check if startTime is not null before using it
+                setElapsedTime(new Date().getTime() - new Date(startTime).getTime());
+            }
         }, 1000);
-
         return () => clearInterval(interval);
     }, [startTime, isCompleted]);
 
     const title = isCompleted ? (language === 'en' ? 'Work Duration' : 'कार्य अवधि') : (language === 'en' ? 'Time Elapsed' : 'समय व्यतीत हुआ');
-    const displayTime = isCompleted && endTime && startTime ? formatDuration(endTime - startTime) : formatDuration(elapsedTime);
-    const bgColor = isCompleted ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600';
+    const displayTime = isCompleted && endTime && startTime 
+        ? formatDuration(new Date(endTime).getTime() - new Date(startTime).getTime()) 
+        : formatDuration(elapsedTime);
+    
+    const colorClasses = isCompleted ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600';
 
     if (!startTime) return null;
 
     return (
-        <div className="mb-6">
-            <h4 className="font-bold text-gray-700 mb-2">{title}</h4>
-            <div className={`text-2xl font-bold text-center p-4 rounded-md ${bgColor}`}>
-                {displayTime}
-            </div>
+        <div className={`p-4 rounded-lg shadow-sm ${colorClasses}`}>
+            <h4 className="font-bold text-center text-sm mb-2">{title}</h4>
+            <p className="text-center text-3xl font-mono font-bold">{displayTime}</p>
         </div>
     );
 };

@@ -12,28 +12,13 @@ interface OrderDetailsPageProps {
 
 export const OrderDetailsPage = ({ job, language, onBack, onShowOtp }: OrderDetailsPageProps) => {
   const ActionButton = () => {
-    // This now correctly checks the 'tracking_status' property
     if (job.tracking_status === 'Assigned') {
-      return (
-        <button 
-          onClick={() => onShowOtp(job.id, 'start')} 
-          className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600"
-        >
-          {language === 'en' ? 'Start Work' : 'काम शुरू करें'}
-        </button>
-      );
+      return <button onClick={() => onShowOtp(job.id, 'start')} className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600">{language === 'en' ? 'Start Work' : 'काम शुरू करें'}</button>;
     }
     if (job.tracking_status === 'On the Way') {
-      return (
-        <button 
-          onClick={() => onShowOtp(job.id, 'complete')} 
-          className="w-full bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600"
-        >
-          {language === 'en' ? 'Complete Work' : 'काम पूरा करें'}
-        </button>
-      );
+      return <button onClick={() => onShowOtp(job.id, 'complete')} className="w-full bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600">{language === 'en' ? 'Complete Work' : 'काम पूरा करें'}</button>;
     }
-    return null; // No button will be shown for other statuses like 'Booked' or 'Completed'
+    return null;
   };
 
   return (
@@ -59,8 +44,15 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp }: OrderDeta
             <p className={`font-semibold text-lg ${job.tracking_status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>{job.tracking_status}</p>
         </div>
 
+        {/* --- THIS IS THE FIX --- */}
+        {/* We now use '?? null' to handle the case where the time is undefined */}
         {(job.tracking_status === 'On the Way' || job.status === 'completed') && (
-            <Timer startTime={job.startTime} endTime={job.endTime} language={language} isCompleted={job.status === 'completed'} />
+            <Timer 
+              startTime={job.start_time ?? null} 
+              endTime={job.end_time ?? null} 
+              language={language} 
+              isCompleted={job.status === 'completed'} 
+            />
         )}
 
         <div className="p-4 bg-white rounded-lg shadow-sm">

@@ -3,6 +3,7 @@
 import { Order } from '../../shared/types/types';
 import SubPageHeader from '../components/common/SubPageHeader';
 import { PhoneIcon, UserCircleIcon } from '../components/common/Icons';
+import { Timer } from '../../worker/components/details/Timer'; 
 
 const ServiceTracker = ({ status }: { status: string }) => {
     const stages = ['Booked', 'Assigned', 'On the Way', 'Completed'];
@@ -54,11 +55,19 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
     return (
         <div className="max-w-4xl mx-auto px-4 pt-4 pb-32">
             <SubPageHeader title={`Order #${order.id.toString().substring(0, 8)}`} onBack={() => setPage('orders')} />
-            
             <ServiceTracker status={order.tracking_status} />
 
             <div className="bg-white p-6 rounded-xl shadow-lg space-y-6 mt-6">
                 
+                 {/* --- NEW: Timer Display Section --- */}
+                 {order.start_time && (
+                    <div>
+                        <h3 className="font-bold text-lg mb-3">Work Timer</h3>
+                        <Timer startTime={order.start_time} endTime={order.end_time} language={'en'} isCompleted={order.status === 'Completed'} />
+                    </div>
+                )}
+                
+
                 {/* OTP Display Section - now shows the correct OTP */}
                 {otpDetails && (
                     <div className="text-center bg-green-50 p-6 rounded-lg border-2 border-dashed border-green-300">

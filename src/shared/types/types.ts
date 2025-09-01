@@ -12,27 +12,33 @@ export interface Profile {
   phone?: string;
 }
 
+// src/shared/types/types.ts
+
 export interface Order {
   id: number;
   user_id: string;
-  worker_id?: string;
-  address_id?: number;
+  worker_id?: string | null;
+  address_id?: number | null;
+  service_name: string;
   date: string;
   duration: number;
-  // --- FIX: Use snake_case to match the database ---
-  service_name: string; 
-  time_slot: string;
   work_description: string;
-  tracking_status: 'Booked' | 'Assigned' | 'On the Way' | 'Completed';
-  // --- FIX: Make 'address' an optional Address object, not a string ---
-  address?: Address | null; 
   price?: number;
   status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
-  otp?: string; 
-  worker?: Profile | null; 
+  
+  // --- FIX: Ensure these are all snake_case ---
+  time_slot: string;
+  tracking_status: 'Booked' | 'Assigned' | 'On the Way' | 'Completed';
   start_otp?: string;
   complete_otp?: string;
+  start_time?: string | null;
+  end_time?: string | null;
+
+  // For joined data
+  address?: Address | null;
+  worker?: Profile | null;
 }
+
 
 export interface Address {
     id: number;
