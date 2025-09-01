@@ -12,15 +12,28 @@ interface OrderDetailsPageProps {
 
 export const OrderDetailsPage = ({ job, language, onBack, onShowOtp }: OrderDetailsPageProps) => {
   const ActionButton = () => {
-    // --- THIS IS THE FIX ---
-    // The component now correctly uses 'tracking_status' with snake_case
+    // This now correctly checks the 'tracking_status' property
     if (job.tracking_status === 'Assigned') {
-      return <button onClick={() => onShowOtp(job.id, 'start')} className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600">{language === 'en' ? 'Start Work' : 'काम शुरू करें'}</button>;
+      return (
+        <button 
+          onClick={() => onShowOtp(job.id, 'start')} 
+          className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600"
+        >
+          {language === 'en' ? 'Start Work' : 'काम शुरू करें'}
+        </button>
+      );
     }
     if (job.tracking_status === 'On the Way') {
-      return <button onClick={() => onShowOtp(job.id, 'complete')} className="w-full bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600">{language === 'en' ? 'Complete Work' : 'काम पूरा करें'}</button>;
+      return (
+        <button 
+          onClick={() => onShowOtp(job.id, 'complete')} 
+          className="w-full bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600"
+        >
+          {language === 'en' ? 'Complete Work' : 'काम पूरा करें'}
+        </button>
+      );
     }
-    return null;
+    return null; // No button will be shown for other statuses like 'Booked' or 'Completed'
   };
 
   return (
