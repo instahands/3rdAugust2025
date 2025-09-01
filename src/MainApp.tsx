@@ -1,4 +1,4 @@
-// src/MainApp.tsx (FINAL, WITH CORRECTED REALTIME)
+// src/MainApp.tsx (FINAL, WITH REALTIME)
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -57,6 +57,7 @@ export default function MainApp() {
             console.error('Error fetching orders:', error);
         } else {
             setOrders(data || []);
+            // If the active order status page is open, update its data as well
             if (page === 'orderStatus' && activeOrder) {
                 const updatedActiveOrder = data.find(o => o.id === activeOrder.id);
                 if (updatedActiveOrder) {
@@ -76,9 +77,8 @@ export default function MainApp() {
         }
     }, []);
 
-    // Hook for Authentication
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const user = session?.user ?? null;
             setCurrentUser(user);
             if (user) {
@@ -93,23 +93,22 @@ export default function MainApp() {
                 setPage('auth');
             }
         });
-        return () => subscription.unsubscribe();
-    }, [fetchOrders]);
-    
-    // Separate Hook for Realtime
-    useEffect(() => {
-        if (!currentUser) return;
 
+        // --- THIS IS THE FIX ---
+        // This subscription listens for any changes to the 'orders' table.
         const ordersSubscription = supabase
-            .channel(`public:orders:user-${currentUser.id}`)
+            .channel('public:orders')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' },
             (payload) => {
                 console.log('User received an order update!', payload);
-                fetchOrders(currentUser.id);
+                if (currentUser) {
+                    fetchOrders(currentUser.id);
+                }
             })
             .subscribe();
 
         return () => {
+            authSubscription.unsubscribe();
             supabase.removeChannel(ordersSubscription);
         };
     }, [currentUser, fetchOrders]);
@@ -142,6 +141,7 @@ export default function MainApp() {
             console.error("DATABASE ERROR:", error);
             alert("Sorry, there was an error booking your service.");
         } else {
+            // No need to manually call fetchOrders, the realtime listener will handle it.
             setBookingDetails({ ...data, address, service });
             setPage('confirmation');
         }
