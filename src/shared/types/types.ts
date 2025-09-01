@@ -30,6 +30,8 @@ export interface Order {
   status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
   otp?: string; 
   worker?: Profile | null; 
+  start_otp?: string;
+  complete_otp?: string;
 }
 
 export interface Address {

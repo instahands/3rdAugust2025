@@ -1,4 +1,4 @@
-// src/app/pages/OrderStatusPage.tsx (NEW FILE)
+// src/app/pages/OrderStatusPage.tsx (FINAL, CORRECTED)
 
 import { Order } from '../../shared/types/types';
 import SubPageHeader from '../components/common/SubPageHeader';
@@ -29,6 +29,28 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
         return <div>Order not found. <button onClick={() => setPage('orders')} className="text-green-600">Go Back</button></div>;
     }
 
+    // --- THIS IS THE FIX ---
+    // This logic determines which OTP to show the user.
+    const getOtpDetails = () => {
+        if (order.tracking_status === 'Assigned') {
+            return {
+                title: 'Start Work OTP',
+                description: 'Share this code with the worker to start the job.',
+                otp: order.start_otp,
+            };
+        }
+        if (order.tracking_status === 'On the Way') {
+            return {
+                title: 'Complete Work OTP',
+                description: 'Share this code with the worker to complete the job.',
+                otp: order.complete_otp,
+            };
+        }
+        return null; // Don't show an OTP for 'Booked' or 'Completed' status
+    };
+
+    const otpDetails = getOtpDetails();
+
     return (
         <div className="max-w-4xl mx-auto px-4 pt-4 pb-32">
             <SubPageHeader title={`Order #${order.id.toString().substring(0, 8)}`} onBack={() => setPage('orders')} />
@@ -37,15 +59,19 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
 
             <div className="bg-white p-6 rounded-xl shadow-lg space-y-6 mt-6">
                 
-                <div className="text-center bg-green-50 p-6 rounded-lg border-2 border-dashed border-green-300">
-                    <h3 className="font-bold text-lg mb-2 text-gray-700">Your One-Time Password (OTP)</h3>
-                    <p className="text-gray-600 text-sm">Share this code with the worker to start and complete the job.</p>
-                    <div className="my-4 text-5xl font-bold tracking-widest text-green-600">
-                        <span>{order.otp || '----'}</span>
+                {/* OTP Display Section - now shows the correct OTP */}
+                {otpDetails && (
+                    <div className="text-center bg-green-50 p-6 rounded-lg border-2 border-dashed border-green-300">
+                        <h3 className="font-bold text-lg mb-2 text-gray-700">{otpDetails.title}</h3>
+                        <p className="text-gray-600 text-sm">{otpDetails.description}</p>
+                        <div className="my-4 text-5xl font-bold tracking-widest text-green-600">
+                            <span>{otpDetails.otp || '----'}</span>
+                        </div>
+                        <p className="text-xs text-gray-500">Do not share this OTP with anyone else.</p>
                     </div>
-                    <p className="text-xs text-gray-500">Do not share this OTP with anyone else.</p>
-                </div>
+                )}
 
+                {/* Worker Details Section */}
                 {order.worker_id && (
                     <div>
                         <h3 className="font-bold text-lg mb-3">Assigned Worker Details</h3>
