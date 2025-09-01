@@ -1,4 +1,4 @@
-// src/worker/hooks/useWorkerData.ts (FINAL, CORRECT MAP URLS)
+// src/worker/hooks/useWorkerData.ts (FINAL, WITH REALTIME)
 
 import { useState, useEffect, useCallback } from 'react';
 import { Job } from '../types/workerTypes';
@@ -31,20 +31,10 @@ export const useWorkerData = (worker: User | null) => {
             setJobs([]);
         } else if (data) {
             const mappedJobs: Job[] = data.map((order: any) => {
-                
-                // --- THIS IS THE FIX ---
                 const addressText = order.address ? `${order.address.street_address}, ${order.address.city}, ${order.address.state}` : '';
                 const encodedAddress = encodeURIComponent(addressText);
-                
-                // Use the correct Google Maps Embed API URL format
-                const mapUrl = addressText
-                    ? `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodedAddress}`
-                    : '';
-                
-                // Use the correct Google Maps Directions URL format
-                const directionsUrl = addressText
-                    ? `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`
-                    : '';
+                const mapUrl = addressText ? `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodedAddress}` : '';
+                const directionsUrl = addressText ? `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}` : '';
 
                 return {
                     ...order,
@@ -58,11 +48,11 @@ export const useWorkerData = (worker: User | null) => {
                     statusDetail: 'pending',
                     workDetails_en: order.work_description,
                     workDetails_hi: order.work_description,
-                    distance: '5 km', // Placeholder
+                    distance: '5 km',
                     mapUrl: mapUrl,
                     directionsUrl: directionsUrl,
-                    startTime: order.startTime || null,
-                    endTime: order.endTime || null,
+                    startTime: order.start_time || null,
+                    endTime: order.end_time || null,
                 };
             });
             setJobs(mappedJobs);
@@ -74,7 +64,25 @@ export const useWorkerData = (worker: User | null) => {
         fetchJobs();
     }, [fetchJobs]);
     
-    // All other functions (acceptJob, verifyOtp, etc.) remain the same
+    // --- THIS IS THE FIX ---
+    // This new useEffect hook listens for any database changes to the orders table.
+    useEffect(() => {
+        if (!worker) return;
+
+        const ordersSubscription = supabase
+            .channel(`public:orders:worker-${worker.id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, 
+            (payload) => {
+                console.log('Worker received an order update!', payload);
+                fetchJobs(); // Re-fetch all jobs when any change occurs
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(ordersSubscription);
+        };
+    }, [worker, fetchJobs]);
+
     const acceptJob = async (jobId: number) => {
         if (!worker) return;
         const { error } = await supabase
@@ -82,17 +90,25 @@ export const useWorkerData = (worker: User | null) => {
             .update({ worker_id: worker.id, status: 'Assigned', tracking_status: 'Assigned' })
             .eq('id', jobId)
             .eq('status', 'Pending');
-        if (error) console.error("Error accepting job:", error);
-        else fetchJobs();
+            
+        if (error) {
+            console.error("Error accepting job:", error);
+            alert("Error accepting job. See console for details.");
+        }
+        // No need to call fetchJobs() here, the realtime listener will handle it.
     };
 
     const verifyOtp = async (otp: string) => {
         if (!otpConfig.jobId || !otpConfig.action) return;
-        const { error } = await supabase.rpc('verify_work_otp', { p_order_id: otpConfig.jobId, p_otp: otp, p_action: otpConfig.action });
-        if (error) console.error(`Error ${otpConfig.action}ing work:`, error);
-        else {
+        const { data, error } = await supabase.rpc('verify_work_otp', { p_order_id: otpConfig.jobId, p_otp: otp, p_action: otpConfig.action });
+        
+        if (error || (data && data.includes('Error'))) {
+            const errorMessage = error?.message || data;
+            console.error(`Error ${otpConfig.action}ing work:`, errorMessage);
+            alert(`Error: ${errorMessage}`);
+        } else {
             hideOtpModal();
-            fetchJobs();
+            // No need to call fetchJobs() here, the realtime listener will handle it.
         }
     };
 

@@ -1,5 +1,5 @@
-// src/MainApp.tsx (FINAL, CORRECTED WITH ORDER STATUS PAGE)
-import { useState, useEffect } from 'react';
+// src/MainApp.tsx (FINAL, WITH REALTIME)
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
 import HomePage from './app/pages/HomePage';
@@ -15,7 +15,6 @@ import AddAddressModal from './app/components/account/AddAddressModal';
 import { HomeIcon, ListIcon, AccountIcon } from './app/components/common/Icons';
 import { Address, Service, Order } from './shared/types/types';
 import OrderStatusPage from './app/pages/OrderStatusPage';
-
 
 const BottomNavBar = ({ setPage, currentPage }: { setPage: (page: string) => void, currentPage: string | null }) => {
     const navItems = [
@@ -52,6 +51,22 @@ export default function MainApp() {
     const refreshData = () => setDataVersion(v => v + 1);
     const [activeOrder, setActiveOrder] = useState<Order | null>(null);
 
+    const fetchOrders = useCallback(async (userId: string) => {
+        const { data, error } = await supabase.from('orders').select('*, address:addresses!address_id(*), worker:profiles!worker_id(name, phone)').eq('user_id', userId).order('date', { ascending: false });
+        if (error) {
+            console.error('Error fetching orders:', error);
+        } else {
+            setOrders(data || []);
+            // If the active order status page is open, update its data as well
+            if (page === 'orderStatus' && activeOrder) {
+                const updatedActiveOrder = data.find(o => o.id === activeOrder.id);
+                if (updatedActiveOrder) {
+                    setActiveOrder(updatedActiveOrder);
+                }
+            }
+        }
+    }, [page, activeOrder]);
+
     useEffect(() => {
         const hash = window.location.hash;
         if (hash.includes('#ref=')) {
@@ -62,14 +77,8 @@ export default function MainApp() {
         }
     }, []);
 
-    const fetchOrders = async (userId: string) => {
-        const { data, error } = await supabase.from('orders').select('*, address:addresses!address_id(*), worker:profiles!worker_id(name, phone)').eq('user_id', userId).order('date', { ascending: false });
-        if (error) console.error('Error fetching orders:', error);
-        else setOrders(data || []);
-    };
-
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const user = session?.user ?? null;
             setCurrentUser(user);
             if (user) {
@@ -84,8 +93,25 @@ export default function MainApp() {
                 setPage('auth');
             }
         });
-        return () => subscription.unsubscribe();
-    }, []);
+
+        // --- THIS IS THE FIX ---
+        // This subscription listens for any changes to the 'orders' table.
+        const ordersSubscription = supabase
+            .channel('public:orders')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' },
+            (payload) => {
+                console.log('User received an order update!', payload);
+                if (currentUser) {
+                    fetchOrders(currentUser.id);
+                }
+            })
+            .subscribe();
+
+        return () => {
+            authSubscription.unsubscribe();
+            supabase.removeChannel(ordersSubscription);
+        };
+    }, [currentUser, fetchOrders]);
     
     useEffect(() => { window.scrollTo(0, 0); }, [page]);
 
@@ -115,7 +141,7 @@ export default function MainApp() {
             console.error("DATABASE ERROR:", error);
             alert("Sorry, there was an error booking your service.");
         } else {
-            await fetchOrders(currentUser.id); // Re-fetch orders to get the new one with OTP
+            // No need to manually call fetchOrders, the realtime listener will handle it.
             setBookingDetails({ ...data, address, service });
             setPage('confirmation');
         }
