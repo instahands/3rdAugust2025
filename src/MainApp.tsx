@@ -1,4 +1,4 @@
-// src/MainApp.tsx (FINAL, CORRECTED FOR INFINITE LOOP)
+// src/MainApp.tsx (FINAL, CORRECTED)
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -51,7 +51,6 @@ export default function MainApp() {
     const refreshData = () => setDataVersion(v => v + 1);
     const [activeOrder, setActiveOrder] = useState<Order | null>(null);
 
-    // This function is now simpler and has no dependencies that would cause a loop.
     const fetchOrders = useCallback(async (userId: string) => {
         const { data, error } = await supabase.from('orders').select('*, address:addresses!address_id(*), worker:profiles!worker_id(name, phone)').eq('user_id', userId).order('date', { ascending: false });
         if (error) {
@@ -71,7 +70,6 @@ export default function MainApp() {
         }
     }, []);
 
-    // This hook only handles authentication state changes.
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const user = session?.user ?? null;
@@ -91,23 +89,12 @@ export default function MainApp() {
         return () => subscription.unsubscribe();
     }, [fetchOrders]);
     
-    // This separate hook handles the Realtime subscription.
     useEffect(() => {
         if (!currentUser) return;
-
-        const ordersSubscription = supabase
-            .channel(`public:orders:user-${currentUser.id}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-                fetchOrders(currentUser.id);
-            })
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(ordersSubscription);
-        };
+        const ordersSubscription = supabase.channel(`public:orders:user-${currentUser.id}`).on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => { fetchOrders(currentUser.id); }).subscribe();
+        return () => { supabase.removeChannel(ordersSubscription); };
     }, [currentUser, fetchOrders]);
 
-    // This hook keeps the active order in sync with the main orders list.
     useEffect(() => {
         if (page === 'orderStatus' && activeOrder) {
             const updatedActiveOrder = orders.find(o => o.id === activeOrder.id);
@@ -159,10 +146,39 @@ export default function MainApp() {
         setIsServiceDetailOpen(false);
         setPage('booking');
     };
-    const proceedToCheckout = (bookingData: any) => {
+
+    // --- THIS IS THE FIX ---
+    // This function now saves new addresses before proceeding.
+    const proceedToCheckout = async (bookingData: any) => {
+        if (bookingData.address && !bookingData.address.created_at && currentUser) {
+            const newAddressToSave = {
+                user_id: currentUser.id,
+                address_type: bookingData.address.address_type,
+                street_address: bookingData.address.street_address,
+                city: bookingData.address.city,
+                state: bookingData.address.state,
+                postal_code: bookingData.address.postal_code,
+                phone_number: bookingData.address.phone_number,
+            };
+
+            const { data: savedAddress, error } = await supabase
+                .from('addresses')
+                .insert(newAddressToSave)
+                .select()
+                .single();
+
+            if (error) {
+                alert("Could not save the new address. Please try again.");
+                return;
+            }
+            bookingData.address = savedAddress;
+            refreshData();
+        }
+
         setBookingDetails(bookingData);
         setPage('checkout');
     };
+
     const handleEditAddress = (address: Address) => {
         setEditingAddress(address);
         setIsAddModalOpen(true);
