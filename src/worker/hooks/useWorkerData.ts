@@ -55,7 +55,6 @@ export const useWorkerData = (worker: User | null) => {
         return () => { supabase.removeChannel(channel); };
     }, [fetchJobs]);
 
-    // This function now calls the new 'accept_order' database function.
     const acceptJob = async (jobId: number) => {
         if (!worker) return;
         const { data, error } = await supabase.rpc('accept_order', {
@@ -89,8 +88,6 @@ export const useWorkerData = (worker: User | null) => {
     
     const activeJob = jobs.find(job => job.id === activeJobId) || null;
     const filteredJobs = jobs.filter(job => job.status === activeTab);
-
-    // This new state checks if the worker has an ongoing job.
     const hasActiveJob = jobs.some(job => job.worker_id === worker?.id && job.status === 'ongoing');
 
     return {

@@ -1,4 +1,3 @@
-// src/worker/components/dashboard/JobCard.tsx (FINAL, CORRECTED)
 import { Job } from '../../types/workerTypes';
 
 interface JobCardProps {
@@ -62,3 +61,4 @@ export const JobCard = ({ job, language, hasActiveJob, onSelect, onAccept }: Job
     </div>
   );
 };
+

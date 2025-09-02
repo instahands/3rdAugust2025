@@ -125,3 +125,4 @@ export const WorkerDashboard = () => {
 
     return <div className="flex items-center justify-center h-screen">An unexpected error occurred. Please try again.</div>;
 };
+
