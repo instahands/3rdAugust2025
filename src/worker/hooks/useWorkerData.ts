@@ -1,5 +1,3 @@
-// src/worker/hooks/useWorkerData.ts (FINAL, WITH JOB LIMIT LOGIC)
-
 import { useState, useEffect, useCallback } from 'react';
 import { Job } from '../types/workerTypes';
 import { supabase } from '../../shared/lib/supabaseClient';
@@ -87,7 +85,19 @@ export const useWorkerData = (worker: User | null) => {
     const hideOtpModal = () => setOtpConfig({ isOpen: false, action: null, jobId: null });
     
     const activeJob = jobs.find(job => job.id === activeJobId) || null;
-    const filteredJobs = jobs.filter(job => job.status === activeTab);
+    
+    const getJobsByStatus = (status: 'new' | 'ongoing' | 'completed') => {
+        switch (status) {
+            case 'new': return jobs.filter(j => j.status === 'new' && !j.worker_id);
+            case 'ongoing': return jobs.filter(j => j.worker_id === worker?.id && j.status === 'ongoing');
+            case 'completed': return jobs.filter(j => j.worker_id === worker?.id && j.status === 'completed');
+            default: return [];
+        }
+    };
+    const filteredJobs = getJobsByStatus(activeTab);
+
+    // --- THIS IS THE FIX ---
+    // This line was missing. It defines hasActiveJob before it is returned.
     const hasActiveJob = jobs.some(job => job.worker_id === worker?.id && job.status === 'ongoing');
 
     return {
