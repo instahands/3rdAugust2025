@@ -1,4 +1,4 @@
-// src/worker/WorkerDashboard.tsx
+// src/worker/WorkerDashboard.tsx (FINAL, CORRECTED)
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -23,28 +23,21 @@ export const WorkerDashboard = () => {
         setWorker(user);
 
         if (user) {
-            // Fetch the user's profile
             const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-
-            // Handle potential errors, but don't log out for a missing profile
-            if (error && error.code !== 'PGRST116') { // PGRST116 means "no rows found", which is OK for a new user.
+            if (error && error.code !== 'PGRST116') {
                 console.error("Error fetching worker profile:", error);
-                await supabase.auth.signOut(); // Log out only on actual DB errors
+                await supabase.auth.signOut();
                 setWorker(null);
                 setWorkerProfile(null);
             } else if (profile && profile.role !== 'worker') {
-                // If a profile exists but it's not for a worker, log them out.
                 console.warn("Authenticated user is not a worker. Logging out.");
                 await supabase.auth.signOut();
                 setWorker(null);
                 setWorkerProfile(null);
             } else {
-                // If profile is found OR if it's null (new user), set it.
-                // The render logic below will correctly show the onboarding page.
                 setWorkerProfile(profile);
             }
         } else {
-            // No user session, so clear the profile
             setWorkerProfile(null);
         }
         setAuthLoading(false);
@@ -53,7 +46,6 @@ export const WorkerDashboard = () => {
     useEffect(() => {
         checkWorkerSession();
         const { data: authListener } = supabase.auth.onAuthStateChange(() => {
-            // This runs on SIGN_IN, SIGN_OUT, TOKEN_REFRESHED, etc.
             checkWorkerSession();
         });
         return () => {
@@ -61,8 +53,10 @@ export const WorkerDashboard = () => {
         };
     }, [checkWorkerSession]);
 
+    // --- THIS IS THE FIX ---
+    // The hook now returns 'hasActiveJob', which we get here.
     const {
-        filteredJobs, currentLanguage, switchLanguage, activeTab, setActiveTab,
+        filteredJobs, hasActiveJob, currentLanguage, switchLanguage, activeTab, setActiveTab,
         activeJob, selectJob, deselectJob, acceptJob,
         otpConfig, showOtpModal, hideOtpModal, verifyOtp, loading
     } = useWorkerData(worker);
@@ -79,7 +73,6 @@ export const WorkerDashboard = () => {
         return <LoginPage />;
     }
 
-    // This logic is now robust. If the profile doesn't exist yet (null) OR doesn't have a name, show onboarding.
     if (!workerProfile?.name) {
         return <WorkerOnboardingPage user={worker} onOnboardingComplete={checkWorkerSession} />;
     }
@@ -110,10 +103,19 @@ export const WorkerDashboard = () => {
                 {activeJob ? (
                     <OrderDetailsPage job={activeJob} language={currentLanguage} onBack={deselectJob} onShowOtp={showOtpModal} />
                 ) : (
+                    // --- THIS IS THE FIX ---
+                    // The 'hasActiveJob' prop is now passed down to the DashboardPage.
                     <DashboardPage 
-                        jobs={filteredJobs} language={currentLanguage} activeTab={activeTab}
-                        onTabChange={setActiveTab} onSelectJob={selectJob} onAcceptJob={acceptJob}
-                        onSwitchLanguage={switchLanguage} onLogout={handleLogout} isLoading={loading}
+                        jobs={filteredJobs} 
+                        language={currentLanguage} 
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab} 
+                        onSelectJob={selectJob} 
+                        onAcceptJob={acceptJob}
+                        onSwitchLanguage={switchLanguage} 
+                        onLogout={handleLogout} 
+                        isLoading={loading}
+                        hasActiveJob={hasActiveJob}
                     />
                 )}
                 <OtpModal isOpen={otpConfig.isOpen} onClose={hideOtpModal} onVerify={verifyOtp} title={currentOtpContent.title} message={currentOtpContent.message} />
@@ -123,4 +125,3 @@ export const WorkerDashboard = () => {
 
     return <div className="flex items-center justify-center h-screen">An unexpected error occurred. Please try again.</div>;
 };
-

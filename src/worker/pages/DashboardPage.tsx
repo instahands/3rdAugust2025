@@ -1,4 +1,4 @@
-// src/worker/pages/DashboardPage.tsx
+// src/worker/pages/DashboardPage.tsx (FINAL, CORRECTED)
 import { Job } from '../types/workerTypes';
 import { JobCard } from '../components/dashboard/JobCard';
 
@@ -12,9 +12,25 @@ interface DashboardPageProps {
   onSwitchLanguage: () => void;
   onLogout: () => void;
   isLoading: boolean;
+  // --- THIS IS THE FIX ---
+  // The interface now includes 'hasActiveJob'.
+  hasActiveJob: boolean;
 }
 
-export const DashboardPage = ({ jobs, language, activeTab, onTabChange, onSelectJob, onAcceptJob, onSwitchLanguage, onLogout, isLoading }: DashboardPageProps) => {
+export const DashboardPage = ({ 
+    jobs, 
+    language, 
+    activeTab, 
+    onTabChange, 
+    onSelectJob, 
+    onAcceptJob, 
+    onSwitchLanguage, 
+    onLogout, 
+    isLoading,
+    // --- THIS IS THE FIX ---
+    // The component now accepts the new prop.
+    hasActiveJob 
+}: DashboardPageProps) => {
   const tabs: Array<'new' | 'ongoing' | 'completed'> = ['new', 'ongoing', 'completed'];
   const tabNames = {
     en: { new: 'New Jobs', ongoing: 'Ongoing', completed: 'Completed' },
@@ -37,14 +53,25 @@ export const DashboardPage = ({ jobs, language, activeTab, onTabChange, onSelect
       <main className="p-4 pb-20">
         <nav className="flex border-b border-gray-200 mb-4">
           {tabs.map(tab => (
-            <button key={tab} onClick={() => onTabChange(tab)} className={`flex-1 py-3 text-center font-semibold border-b-2 ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'}`}>\
+            <button key={tab} onClick={() => onTabChange(tab)} className={`flex-1 py-3 text-center font-semibold border-b-2 ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'}`}>
               {tabNames[language][tab]}
             </button>
           ))}
         </nav>
         <div>
-          {isLoading ? <p>Loading jobs...</p> : jobs.length > 0 ? (
-            jobs.map(job => <JobCard key={job.id} job={job} language={language} onSelect={onSelectJob} onAccept={onAcceptJob} />)
+          {isLoading ? <p className="text-center text-gray-500 mt-8">Loading jobs...</p> : jobs.length > 0 ? (
+            jobs.map(job => 
+                // --- THIS IS THE FIX ---
+                // The 'hasActiveJob' prop is now passed down to each JobCard.
+                <JobCard 
+                    key={job.id} 
+                    job={job} 
+                    language={language} 
+                    onSelect={onSelectJob} 
+                    onAccept={onAcceptJob}
+                    hasActiveJob={hasActiveJob}
+                />
+            )
           ) : (
             <p className="text-center text-gray-500 mt-8">No jobs in this category.</p>
           )}

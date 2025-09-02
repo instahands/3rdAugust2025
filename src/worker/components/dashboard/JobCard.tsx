@@ -1,16 +1,16 @@
-// src/worker/components/dashboard/JobCard.tsx
+// src/worker/components/dashboard/JobCard.tsx (FINAL, CORRECTED)
 import { Job } from '../../types/workerTypes';
 
 interface JobCardProps {
   job: Job;
   language: 'en' | 'hi';
+  hasActiveJob: boolean;
   onSelect: (jobId: number) => void;
   onAccept: (jobId: number) => void;
 }
 
-export const JobCard = ({ job, language, onSelect, onAccept }: JobCardProps) => {
+export const JobCard = ({ job, language, hasActiveJob, onSelect, onAccept }: JobCardProps) => {
   const handleCardClick = () => {
-    // --- FIX: Compare with the new frontend statuses ---
     if (job.status === 'ongoing' || job.status === 'completed') {
       onSelect(job.id);
     }
@@ -22,9 +22,19 @@ export const JobCard = ({ job, language, onSelect, onAccept }: JobCardProps) => 
   };
 
   const ActionButton = () => {
-    // --- FIX: Compare with the new frontend statuses ---
     if (job.status === 'new') {
-      return <button onClick={handleAcceptClick} className="w-full mt-4 bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600">{language === 'en' ? 'Accept' : 'स्वीकार करें'}</button>;
+      return (
+        // --- THIS IS THE FIX ---
+        // This button is now correctly disabled if the worker has an active job.
+        <button 
+          onClick={handleAcceptClick} 
+          disabled={hasActiveJob} 
+          className="w-full mt-4 bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          title={hasActiveJob ? "You must complete your current job first" : "Accept this job"}
+        >
+          {language === 'en' ? 'Accept' : 'स्वीकार करें'}
+        </button>
+      );
     }
     if (job.status === 'ongoing') {
       return <div className="mt-4 text-center text-blue-600 font-semibold bg-blue-50 p-2 rounded-md">{language === 'en' ? 'Work In Progress' : 'काम चल रहा है'}</div>;
