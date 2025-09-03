@@ -28,40 +28,37 @@ export const WorkerDashboard = () => {
                 await supabase.auth.signOut();
                 setWorker(null);
                 setWorkerProfile(null);
-            } else if (profile && profile.role !== 'worker') {
-                console.warn("Authenticated user is not a worker. Logging out.");
-                await supabase.auth.signOut();
-                setWorker(null);
-                setWorkerProfile(null);
             } else {
                 setWorkerProfile(profile);
             }
-        } else {
-            setWorkerProfile(null);
         }
         setAuthLoading(false);
     }, []);
 
     useEffect(() => {
         checkWorkerSession();
-        const { data: authListener } = supabase.auth.onAuthStateChange(() => {
-            checkWorkerSession();
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            const user = session?.user ?? null;
+            setWorker(user);
+            if (!user) {
+                setWorkerProfile(null);
+            } else {
+                 checkWorkerSession();
+            }
         });
-        return () => {
-            authListener.subscription.unsubscribe();
-        };
+        return () => subscription.unsubscribe();
     }, [checkWorkerSession]);
 
     const {
-        filteredJobs, hasActiveJob, currentLanguage, switchLanguage, activeTab, setActiveTab,
-        activeJob, selectJob, deselectJob, acceptJob,
-        otpConfig, showOtpModal, hideOtpModal, verifyOtp, loading, confirmCashPayment
+        filteredJobs, loading, currentLanguage, activeTab, activeJob, otpConfig, hasActiveJob,
+        switchLanguage, setActiveTab, selectJob, deselectJob, acceptJob, verifyOtp, showOtpModal, hideOtpModal, confirmPayment
     } = useWorkerData(worker);
+
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
     };
-
+    
     if (authLoading) {
         return <div className="flex items-center justify-center h-screen">Loading...</div>;
     }
@@ -78,37 +75,33 @@ export const WorkerDashboard = () => {
         return <WorkerPendingPage handleLogout={handleLogout} />;
     }
 
-    if (workerProfile.worker_status === 'rejected') {
-        return (
-            <div className="flex flex-col items-center justify-center h-screen p-4 text-center">
-                <h2 className="text-xl font-bold">Application Not Approved</h2>
-                <p className="mt-2">Your profile could not be approved. Please contact support.</p>
-                <button onClick={handleLogout} className="mt-4 px-4 py-2 bg-gray-500 text-white rounded-md">Logout</button>
-            </div>
-        );
-    }
-    
     if (workerProfile.worker_status === 'approved') {
-        const otpMessages: { [key in 'start' | 'complete']: { [key in 'en' | 'hi']: { title: string; message: string } } } = {
-            start: { en: { title: 'Start Work OTP', message: 'Enter the 4-digit OTP from the customer to start the work.' }, hi: { title: 'काम शुरू करने के लिए OTP', message: 'काम शुरू करने के लिए ग्राहक से 4 अंकों का OTP दर्ज करें।' } },
-            complete: { en: { title: 'Complete Work OTP', message: 'Enter the 4-digit OTP from the customer to complete the work.' }, hi: { title: 'काम पूरा करने के लिए OTP', message: 'काम पूरा करने के लिए ग्राहक से 4 अंकों का OTP दर्ज करें।' } }
+        const otpMessages = {
+            start: { en: { title: 'OTP to Start Work', message: 'Please enter the 4-digit OTP from the customer to start the work.' }, hi: { title: 'काम शुरू करने के लिए OTP', message: 'काम शुरू करने के लिए ग्राहक से 4 अंकों का OTP दर्ज करें।' } },
+            complete: { en: { title: 'OTP to Complete Work', message: 'Please enter the 4-digit OTP from the customer to complete the work.' }, hi: { title: 'काम पूरा करने के लिए OTP', message: 'काम पूरा करने के लिए ग्राहक से 4 अंकों का OTP दर्ज करें।' } }
         };
         const currentOtpContent = otpConfig.action ? otpMessages[otpConfig.action][currentLanguage] : { title: '', message: '' };
 
         return (
             <div className="max-w-md mx-auto min-h-screen bg-gray-50 shadow-lg font-sans">
                 {activeJob ? (
-                    <OrderDetailsPage job={activeJob} language={currentLanguage} onBack={deselectJob} onShowOtp={showOtpModal} onConfirmCash={confirmCashPayment} />
-                ) : (
-                    <DashboardPage 
-                        jobs={filteredJobs} 
+                    <OrderDetailsPage 
+                        job={activeJob} 
                         language={currentLanguage} 
+                        onBack={deselectJob} 
+                        onShowOtp={showOtpModal} 
+                        onConfirmPayment={confirmPayment} 
+                    />
+                ) : (
+                    <DashboardPage
+                        jobs={filteredJobs}
+                        language={currentLanguage}
                         activeTab={activeTab}
-                        onTabChange={setActiveTab} 
-                        onSelectJob={selectJob} 
+                        onTabChange={setActiveTab}
+                        onSelectJob={selectJob}
                         onAcceptJob={acceptJob}
-                        onSwitchLanguage={switchLanguage} 
-                        onLogout={handleLogout} 
+                        onSwitchLanguage={switchLanguage}
+                        onLogout={handleLogout}
                         isLoading={loading}
                         hasActiveJob={hasActiveJob}
                     />
@@ -120,4 +113,3 @@ export const WorkerDashboard = () => {
 
     return <div className="flex items-center justify-center h-screen">An unexpected error occurred. Please try again.</div>;
 };
-

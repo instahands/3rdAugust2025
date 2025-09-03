@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Job } from '../types/workerTypes';
 import { supabase } from '../../shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 export const useWorkerData = (worker: User | null) => {
     const [jobs, setJobs] = useState<Job[]>([]);
@@ -29,64 +30,89 @@ export const useWorkerData = (worker: User | null) => {
                 service_en: order.service_name,
                 service_hi: order.service_name,
                 customerName: order.customerProfile?.name || 'N/A',
-                address: order.address ? `${order.address.street_address}, ${order.address.city}` : 'Address not found',
-                dateTime: `${new Date(order.date).toDateString()} at ${order.time_slot}`,
-                earning: order.price || 0,
-                status: order.worker_id ? (order.status === 'Completed' ? 'completed' : 'ongoing') : 'new',
-                statusDetail: 'pending',
+                address: order.address ? `${order.address.street_address}, ${order.address.city}`: 'N/A',
+                dateTime: new Date(order.date).toLocaleString(),
+                earning: order.price,
+                status: order.status === 'Pending' ? 'new' : order.tracking_status === 'Completed' ? 'completed' : 'ongoing',
+                statusDetail: order.tracking_status,
                 workDetails_en: order.work_description,
                 workDetails_hi: order.work_description,
-                distance: '5 km',
-                mapUrl: order.address ? `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(`${order.address.street_address}, ${order.address.city}`)}` : '',
-                directionsUrl: order.address ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${order.address.street_address}, ${order.address.city}`)}` : '',
-                startTime: order.start_time || null,
-                endTime: order.end_time || null,
+                distance: 'Calculating...',
+                mapUrl: `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${order.address?.street_address},${order.address?.city}`,
+                directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${order.address?.street_address},${order.address?.city}`,
+                startTime: order.start_time,
+                endTime: order.end_time,
+                customerPhone: order.customerProfile?.phone
             }));
             setJobs(mappedJobs);
         }
         setLoading(false);
     }, [worker]);
-    
+
     useEffect(() => {
-        fetchJobs();
-        const channel = supabase.channel('public:orders').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchJobs()).subscribe();
-        return () => { supabase.removeChannel(channel); };
-    }, [fetchJobs]);
+        if (worker) {
+            fetchJobs();
+
+            const channel: RealtimeChannel = supabase.channel(`public:orders`)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, 
+                (payload) => {
+                    console.log('Change received!', payload);
+                    fetchJobs();
+                })
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
+        }
+    }, [worker, fetchJobs]);
+    
 
     const acceptJob = async (jobId: number) => {
         if (!worker) return;
-        const { data, error } = await supabase.rpc('accept_order', {
-            p_order_id: jobId,
-            p_worker_id: worker.id
-        });
-
-        if (error || (data && data.includes('Error'))) {
-            const errorMessage = error?.message || data;
-            console.error("Error accepting job:", errorMessage);
-            alert(errorMessage);
-        }
+        const { error } = await supabase.from('orders').update({ worker_id: worker.id, status: 'Assigned', tracking_status: 'Assigned' }).eq('id', jobId);
+        if (error) console.error("Error accepting job:", error);
+        else fetchJobs();
     };
 
     const verifyOtp = async (otp: string) => {
         if (!otpConfig.jobId || !otpConfig.action) return;
-        const { data, error } = await supabase.rpc('verify_work_otp', { p_order_id: otpConfig.jobId, p_otp: otp, p_action: otpConfig.action });
-        if (error || (data && data.includes('Error'))) {
-            const errorMessage = error?.message || data;
-            alert(`Error: ${errorMessage}`);
+
+        const job = jobs.find(j => j.id === otpConfig.jobId);
+        if (!job) return;
+
+        const otpField = otpConfig.action === 'start' ? 'start_otp' : 'complete_otp';
+        const newTrackingStatus = otpConfig.action === 'start' ? 'On the Way' : 'Completed';
+        const timeField = otpConfig.action === 'start' ? 'start_time' : 'end_time';
+
+        if (job[otpField] === otp) {
+            const updateData: any = { tracking_status: newTrackingStatus };
+            updateData[timeField] = new Date().toISOString();
+            
+            if(newTrackingStatus === 'Completed') {
+                updateData.status = 'Completed';
+            }
+
+            const { error } = await supabase.from('orders').update(updateData).eq('id', otpConfig.jobId);
+            if (error) console.error("Error updating job status:", error);
+            else {
+                hideOtpModal();
+                fetchJobs();
+            }
         } else {
-            hideOtpModal();
+            alert('Invalid OTP');
+        }
+    };
+    
+    const confirmPayment = async (jobId: number, method: 'Cash' | 'Worker QR') => {
+        const { error } = await supabase.from('orders').update({ payment_status: `Paid via ${method}` }).eq('id', jobId);
+        if (error) console.error("Error confirming payment:", error);
+        else {
+            fetchJobs();
+            deselectJob();
         }
     };
 
-     const confirmCashPayment = async (jobId: number) => {
-        const { error } = await supabase.rpc('confirm_cash_payment', { p_order_id: jobId });
-
-        if (error) {
-            alert("Failed to confirm payment. Please try again.");
-            console.error("Error confirming payment:", error);
-        }
-        // The real-time listener will automatically refresh the job list.
-    };
 
     const switchLanguage = () => setCurrentLanguage(lang => lang === 'en' ? 'hi' : 'en');
     const selectJob = (jobId: number) => setActiveJobId(jobId);
@@ -106,14 +132,24 @@ export const useWorkerData = (worker: User | null) => {
     };
     const filteredJobs = getJobsByStatus(activeTab);
 
-    // --- THIS IS THE FIX ---
-    // This line was missing. It defines hasActiveJob before it is returned.
     const hasActiveJob = jobs.some(job => job.worker_id === worker?.id && job.status === 'ongoing');
 
     return {
-        filteredJobs, hasActiveJob, currentLanguage, switchLanguage, activeTab, setActiveTab,
-        activeJob, selectJob, deselectJob, acceptJob,
-        otpConfig, showOtpModal, hideOtpModal, verifyOtp, loading ,confirmCashPayment 
+        filteredJobs,
+        loading,
+        currentLanguage,
+        activeTab,
+        activeJob,
+        otpConfig,
+        hasActiveJob,
+        switchLanguage,
+        setActiveTab,
+        selectJob,
+        deselectJob,
+        acceptJob,
+        verifyOtp,
+        showOtpModal,
+        hideOtpModal,
+        confirmPayment,
     };
 };
-

@@ -7,12 +7,22 @@ export interface Profile {
   role: 'user' | 'admin' | 'worker';
   created_at: string;
   worker_status?: 'pending' | 'approved' | 'rejected' | null;
-  // --- FIX: Add optional password for new worker creation form ---
   password?: string;
   phone?: string;
+  address?: string;
 }
 
-// src/shared/types/types.ts
+export interface Service {
+    name: string;
+    manpowerType: string;
+    color: string;
+    price: number;
+    description: string;
+    imageUrl: string;
+    trainedTo: string[];
+    equippedWith: string[];
+    excluded: string[];
+}
 
 export interface Order {
   id: number;
@@ -25,19 +35,18 @@ export interface Order {
   work_description: string;
   price?: number;
   status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
-  
-  // --- FIX: Ensure these are all snake_case ---
   time_slot: string;
   tracking_status: 'Booked' | 'Assigned' | 'On the Way' | 'Completed';
   start_otp?: string;
   complete_otp?: string;
   start_time?: string | null;
   end_time?: string | null;
-
-  // For joined data
   address?: Address | null;
   worker?: Profile | null;
-  payment_status: 'Unpaid' | 'Paid'; 
+  // --- UPDATED PAYMENT FIELDS ---
+  payment_method: 'cod' | 'prepaid';
+  payment_status: 'Pending' | 'Paid via App' | 'Paid via Cash' | 'Paid via Worker QR' | 'Failed';
+  cod_payment_choice?: 'cash' | 'online' | null;
 }
 
 
@@ -50,32 +59,20 @@ export interface Address {
     state: string;
     postal_code: string;
     phone_number: string;
+    created_at?: string;
 }
 
 export interface Notification {
   id: string;
   message: string;
-  type: 'order' | 'user';
-  timestamp: Date;
   isRead: boolean;
+  type: 'order' | 'user';
+  createdAt: Date;
 }
 
 export type DataItem = Profile | Order | Address;
-
-export interface Service {
-    name: string;
-    manpowerType: string;
-    color: string;
-    price: number;
-    description: string;
-    imageUrl: string;
-    trainedTo: string[];
-    excluded: string[];
-    needs?: string[]; 
-}
 
 export interface LocationCoords {
     lat: number;
     lng: number;
 }
-

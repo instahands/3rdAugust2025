@@ -1,4 +1,4 @@
-// src/app/pages/OrderStatusPage.tsx (FINAL, CORRECTED)
+// src/app/pages/OrderStatusPage.tsx
 
 import { Order } from '../../shared/types/types';
 import SubPageHeader from '../components/common/SubPageHeader';
@@ -23,72 +23,53 @@ const ServiceTracker = ({ status }: { status: string }) => {
             </div>
         </div>
     );
-};
+}
 
 export default function OrderStatusPage({ setPage, order }: { setPage: (page: string) => void, order: Order | null }) {
     if (!order) {
-        return <div>Order not found. <button onClick={() => setPage('orders')} className="text-green-600">Go Back</button></div>;
+        return (
+            <div>
+                <SubPageHeader title="Order Status" onBack={() => setPage('orders')} />
+                <p className="text-center mt-8">Order not found.</p>
+            </div>
+        );
+    }
+    
+    const otpDetails = (() => {
+        if (order.tracking_status === 'Assigned') return { title: 'OTP to Start Work', description: 'Share this with the worker to begin the service.', otp: order.start_otp };
+        if (order.tracking_status === 'On the Way') return { title: 'OTP to Complete Work', description: 'Share this with the worker upon satisfactory completion.', otp: order.complete_otp };
+        return null;
+    })();
+
+    const CodPaymentPrompt = () => {
+      if (order.payment_method === 'cod' && order.payment_status === 'Pending' && order.tracking_status === 'Assigned') {
+        return (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+            <h3 className="font-bold text-blue-800">Payment Required</h3>
+            <p className="text-sm text-blue-700 mt-1">Please pay the worker <strong>₹{order.price}</strong> upon arrival to start the service.</p>
+            <div className="mt-3 text-xs text-gray-500">You can pay via Cash or Online (worker's QR).</div>
+          </div>
+        )
+      }
+      return null;
     }
 
-    // --- THIS IS THE FIX ---
-    // This logic determines which OTP to show the user.
-    const getOtpDetails = () => {
-        if (order.tracking_status === 'Assigned') {
-            return {
-                title: 'Start Work OTP',
-                description: 'Share this code with the worker to start the job.',
-                otp: order.start_otp,
-            };
-        }
-        if (order.tracking_status === 'On the Way') {
-            return {
-                title: 'Complete Work OTP',
-                description: 'Share this code with the worker to complete the job.',
-                otp: order.complete_otp,
-            };
-        }
-        return null; // Don't show an OTP for 'Booked' or 'Completed' status
-    };
-
-    const otpDetails = getOtpDetails();
 
     return (
-        <div className="max-w-4xl mx-auto px-4 pt-4 pb-32">
-            <SubPageHeader title={`Order #${order.id.toString().substring(0, 8)}`} onBack={() => setPage('orders')} />
-            <ServiceTracker status={order.tracking_status} />
+        <div className="pb-24">
+            <SubPageHeader title="Order Status" onBack={() => setPage('orders')} />
+            <div className="max-w-2xl mx-auto px-4 space-y-6">
+                <ServiceTracker status={order.tracking_status} />
 
-            <div className="bg-white p-6 rounded-xl shadow-lg spFace-y-6 mt-6">
-                
-                {/* --- NEW: Payment Pending Section --- */}
-                {order.status === 'Completed' && order.payment_status === 'Unpaid' && (
-                    <div className="text-center bg-yellow-50 p-6 rounded-lg border-2 border-dashed border-yellow-300">
-                        <h3 className="font-bold text-lg mb-2 text-gray-700">Payment Pending</h3>
-                        <p className="text-gray-600 text-sm">Please pay the amount shown below to the worker in cash.</p>
-                        <div className="my-4 text-5xl font-bold text-yellow-600">
-                            <span>₹{order.price?.toFixed(2)}</span>
-                        </div>
-                        <p className="text-xs text-gray-500">The status will update once the worker confirms payment.</p>
-                    </div>
+                {(order.tracking_status === 'On the Way' || order.tracking_status === 'Completed') && (
+                     <Timer startTime={order.start_time || null} endTime={order.end_time} language="en" isCompleted={order.tracking_status === 'Completed'} />
                 )}
-                 {order.payment_status === 'Paid' && (
-                     <div className="text-center bg-green-50 p-6 rounded-lg">
-                        <h3 className="font-bold text-lg text-green-700">Payment Complete!</h3>
-                     </div>
-                )}
-                
-                 {/* --- NEW: Timer Display Section --- */}
-                 {order.start_time && (
-                    <div>
-                        <h3 className="font-bold text-lg mb-3">Work Timer</h3>
-                        <Timer startTime={order.start_time} endTime={order.end_time} language={'en'} isCompleted={order.status === 'Completed'} />
-                    </div>
-                )}
-                
 
-                {/* OTP Display Section - now shows the correct OTP */}
+                <CodPaymentPrompt />
+
                 {otpDetails && (
-                    <div className="text-center bg-green-50 p-6 rounded-lg border-2 border-dashed border-green-300">
-                        <h3 className="font-bold text-lg mb-2 text-gray-700">{otpDetails.title}</h3>
+                    <div className="p-4 bg-white rounded-lg shadow-sm text-center">
+                        <h3 className="font-bold text-lg text-gray-800">{otpDetails.title}</h3>
                         <p className="text-gray-600 text-sm">{otpDetails.description}</p>
                         <div className="my-4 text-5xl font-bold tracking-widest text-green-600">
                             <span>{otpDetails.otp || '----'}</span>
@@ -97,7 +78,6 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
                     </div>
                 )}
 
-                {/* Worker Details Section */}
                 {order.worker_id && (
                     <div>
                         <h3 className="font-bold text-lg mb-3">Assigned Worker Details</h3>
