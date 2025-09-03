@@ -57,7 +57,24 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
             <SubPageHeader title={`Order #${order.id.toString().substring(0, 8)}`} onBack={() => setPage('orders')} />
             <ServiceTracker status={order.tracking_status} />
 
-            <div className="bg-white p-6 rounded-xl shadow-lg space-y-6 mt-6">
+            <div className="bg-white p-6 rounded-xl shadow-lg spFace-y-6 mt-6">
+                
+                {/* --- NEW: Payment Pending Section --- */}
+                {order.status === 'Completed' && order.payment_status === 'Unpaid' && (
+                    <div className="text-center bg-yellow-50 p-6 rounded-lg border-2 border-dashed border-yellow-300">
+                        <h3 className="font-bold text-lg mb-2 text-gray-700">Payment Pending</h3>
+                        <p className="text-gray-600 text-sm">Please pay the amount shown below to the worker in cash.</p>
+                        <div className="my-4 text-5xl font-bold text-yellow-600">
+                            <span>₹{order.price?.toFixed(2)}</span>
+                        </div>
+                        <p className="text-xs text-gray-500">The status will update once the worker confirms payment.</p>
+                    </div>
+                )}
+                 {order.payment_status === 'Paid' && (
+                     <div className="text-center bg-green-50 p-6 rounded-lg">
+                        <h3 className="font-bold text-lg text-green-700">Payment Complete!</h3>
+                     </div>
+                )}
                 
                  {/* --- NEW: Timer Display Section --- */}
                  {order.start_time && (

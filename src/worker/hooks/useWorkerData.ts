@@ -78,6 +78,16 @@ export const useWorkerData = (worker: User | null) => {
         }
     };
 
+     const confirmCashPayment = async (jobId: number) => {
+        const { error } = await supabase.rpc('confirm_cash_payment', { p_order_id: jobId });
+
+        if (error) {
+            alert("Failed to confirm payment. Please try again.");
+            console.error("Error confirming payment:", error);
+        }
+        // The real-time listener will automatically refresh the job list.
+    };
+
     const switchLanguage = () => setCurrentLanguage(lang => lang === 'en' ? 'hi' : 'en');
     const selectJob = (jobId: number) => setActiveJobId(jobId);
     const deselectJob = () => setActiveJobId(null);
@@ -103,7 +113,7 @@ export const useWorkerData = (worker: User | null) => {
     return {
         filteredJobs, hasActiveJob, currentLanguage, switchLanguage, activeTab, setActiveTab,
         activeJob, selectJob, deselectJob, acceptJob,
-        otpConfig, showOtpModal, hideOtpModal, verifyOtp, loading
+        otpConfig, showOtpModal, hideOtpModal, verifyOtp, loading ,confirmCashPayment 
     };
 };
 

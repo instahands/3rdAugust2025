@@ -37,6 +37,7 @@ export interface Order {
   // For joined data
   address?: Address | null;
   worker?: Profile | null;
+  payment_status: 'Unpaid' | 'Paid'; 
 }
 
 

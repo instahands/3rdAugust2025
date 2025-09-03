@@ -1,4 +1,3 @@
-// src/worker/WorkerDashboard.tsx (FINAL, CORRECTED)
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -53,12 +52,10 @@ export const WorkerDashboard = () => {
         };
     }, [checkWorkerSession]);
 
-    // --- THIS IS THE FIX ---
-    // The hook now returns 'hasActiveJob', which we get here.
     const {
         filteredJobs, hasActiveJob, currentLanguage, switchLanguage, activeTab, setActiveTab,
         activeJob, selectJob, deselectJob, acceptJob,
-        otpConfig, showOtpModal, hideOtpModal, verifyOtp, loading
+        otpConfig, showOtpModal, hideOtpModal, verifyOtp, loading, confirmCashPayment
     } = useWorkerData(worker);
 
     const handleLogout = async () => {
@@ -101,10 +98,8 @@ export const WorkerDashboard = () => {
         return (
             <div className="max-w-md mx-auto min-h-screen bg-gray-50 shadow-lg font-sans">
                 {activeJob ? (
-                    <OrderDetailsPage job={activeJob} language={currentLanguage} onBack={deselectJob} onShowOtp={showOtpModal} />
+                    <OrderDetailsPage job={activeJob} language={currentLanguage} onBack={deselectJob} onShowOtp={showOtpModal} onConfirmCash={confirmCashPayment} />
                 ) : (
-                    // --- THIS IS THE FIX ---
-                    // The 'hasActiveJob' prop is now passed down to the DashboardPage.
                     <DashboardPage 
                         jobs={filteredJobs} 
                         language={currentLanguage} 

@@ -1,5 +1,3 @@
-// src/worker/pages/OrderDetailsPage.tsx (FINAL, CORRECTED)
-
 import { Job } from '../types/workerTypes';
 import { Timer } from '../components/details/Timer';
 
@@ -8,15 +6,17 @@ interface OrderDetailsPageProps {
   language: 'en' | 'hi';
   onBack: () => void;
   onShowOtp: (jobId: number, action: 'start' | 'complete') => void;
+  // --- This prop is now correctly received and used ---
+  onConfirmCash: (jobId: number) => void;
 }
 
-export const OrderDetailsPage = ({ job, language, onBack, onShowOtp }: OrderDetailsPageProps) => {
+export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmCash }: OrderDetailsPageProps) => {
   const ActionButton = () => {
     if (job.tracking_status === 'Assigned') {
-      return <button onClick={() => onShowOtp(job.id, 'start')} className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600">{language === 'en' ? 'Start Work' : 'काम शुरू करें'}</button>;
+      return <button onClick={() => onShowOtp(job.id, 'start')} className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600">Start Work</button>;
     }
     if (job.tracking_status === 'On the Way') {
-      return <button onClick={() => onShowOtp(job.id, 'complete')} className="w-full bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600">{language === 'en' ? 'Complete Work' : 'काम पूरा करें'}</button>;
+      return <button onClick={() => onShowOtp(job.id, 'complete')} className="w-full bg-purple-500 text-white py-3 rounded-lg font-semibold hover:bg-purple-600">Complete Work</button>;
     }
     return null;
   };
@@ -25,7 +25,7 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp }: OrderDeta
     <div>
       <header className="bg-white p-4 shadow-md sticky top-0 z-10 flex items-center">
         <button onClick={onBack} className="mr-4">&larr;</button>
-        <h2 className="text-lg font-bold">{language === 'en' ? 'Order Details' : 'ऑर्डर विवरण'}</h2>
+        <h2 className="text-lg font-bold">Order Details</h2>
       </header>
       <div className="p-4 space-y-4 pb-20">
         <div className="p-4 bg-white rounded-lg shadow-sm">
@@ -44,8 +44,6 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp }: OrderDeta
             <p className={`font-semibold text-lg ${job.tracking_status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>{job.tracking_status}</p>
         </div>
 
-        {/* --- THIS IS THE FIX --- */}
-        {/* We now use '?? null' to handle the case where the time is undefined */}
         {(job.tracking_status === 'On the Way' || job.status === 'completed') && (
             <Timer 
               startTime={job.start_time ?? null} 
@@ -67,6 +65,20 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp }: OrderDeta
             </div>
             <a href={job.directionsUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center mt-4 bg-gray-100 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200">Get Directions</a>
         </div>
+        
+        {/* --- This section now works correctly --- */}
+        {job.status === 'completed' && job.payment_status === 'Unpaid' && (
+            <div className="p-4 bg-white rounded-lg shadow-sm">
+                <h4 className="font-bold text-gray-700 mb-2">Payment Action</h4>
+                <p className="text-sm text-gray-600 mb-3">Confirm you have received the cash payment of ₹{job.earning}.</p>
+                <button 
+                    onClick={() => onConfirmCash(job.id)}
+                    className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600"
+                >
+                    Confirm Cash Received
+                </button>
+            </div>
+        )}
         
         <div className="p-4">
           <ActionButton />
