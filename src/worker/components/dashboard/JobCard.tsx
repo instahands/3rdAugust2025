@@ -10,21 +10,23 @@ interface JobCardProps {
 
 export const JobCard = ({ job, language, hasActiveJob, onSelect, onAccept }: JobCardProps) => {
   const handleCardClick = () => {
-    if (job.status === 'ongoing' || job.status === 'completed') {
+    // A worker should be able to view details of any of their ongoing or completed jobs.
+    if (job.workerStatus === 'ongoing' || job.workerStatus === 'completed') {
       onSelect(job.id);
     }
   };
 
   const handleAcceptClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent the card's click event from firing
     onAccept(job.id);
   };
 
   const ActionButton = () => {
-    if (job.status === 'new') {
+    // --- THIS IS THE FIX ---
+    // The code now correctly checks `job.workerStatus` instead of `job.status`.
+    // This will make the "Accept" button appear for new jobs.
+    if (job.workerStatus === 'new') {
       return (
-        // --- THIS IS THE FIX ---
-        // This button is now correctly disabled if the worker has an active job.
         <button 
           onClick={handleAcceptClick} 
           disabled={hasActiveJob} 
@@ -35,10 +37,10 @@ export const JobCard = ({ job, language, hasActiveJob, onSelect, onAccept }: Job
         </button>
       );
     }
-    if (job.status === 'ongoing') {
+    if (job.workerStatus === 'ongoing') {
       return <div className="mt-4 text-center text-blue-600 font-semibold bg-blue-50 p-2 rounded-md">{language === 'en' ? 'Work In Progress' : 'काम चल रहा है'}</div>;
     }
-    if (job.status === 'completed') {
+    if (job.workerStatus === 'completed') {
       return <div className="mt-4 text-center text-green-600 font-semibold bg-green-50 p-2 rounded-md">{language === 'en' ? 'Work Finished' : 'काम पूरा हुआ'}</div>;
     }
     return null;
@@ -49,16 +51,14 @@ export const JobCard = ({ job, language, hasActiveJob, onSelect, onAccept }: Job
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-bold text-lg text-gray-800">{language === 'en' ? job.service_en : job.service_hi}</h3>
-          <p className="text-sm text-gray-600">{job.customerName}</p>
-          <p className="text-sm text-gray-500">{job.address}</p>
+          <p className="text-sm text-gray-600">{job.dateTime}</p>
         </div>
         <div className="text-right">
           <p className="font-bold text-lg text-green-600">₹{job.earning}</p>
-          <p className="text-xs text-gray-500">{job.dateTime}</p>
+          <p className="text-xs text-gray-500">{job.distance}</p>
         </div>
       </div>
       <ActionButton />
     </div>
   );
 };
-
