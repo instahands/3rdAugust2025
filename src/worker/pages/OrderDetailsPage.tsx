@@ -1,5 +1,6 @@
 import { Job } from '../types/workerTypes';
 import { Timer } from '../components/details/Timer';
+import WorkerDirectionsMap from '../components/details/WorkerDirectionsMap';
 
 interface OrderDetailsPageProps {
   job: Job;
@@ -7,9 +8,10 @@ interface OrderDetailsPageProps {
   onBack: () => void;
   onShowOtp: (jobId: number, action: 'start' | 'complete') => void;
   onConfirmPayment: (jobId: number, method: 'Cash' | 'Worker QR') => void;
+  workerPosition: { lat: number; lng: number } | null;
 }
 
-export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPayment }: OrderDetailsPageProps) => {
+export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPayment, workerPosition }: OrderDetailsPageProps) => {
     
   const canStartWork = job.payment_method === 'prepaid' || (job.payment_method === 'cod' && job.payment_status.startsWith('Paid'));
 
@@ -62,9 +64,6 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
         </div>
 
         {(job.tracking_status === 'On the Way' || job.tracking_status === 'Completed') && (
-            // --- THIS IS THE FIX ---
-            // We use `?? null` to ensure that if job.start_time is undefined,
-            // we pass `null` to the Timer, satisfying its type requirement.
             <Timer startTime={job.start_time ?? null} endTime={job.end_time} language={language} isCompleted={job.tracking_status === 'Completed'} />
         )}
         
@@ -81,11 +80,13 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
         </div>
 
         <div className="p-4 bg-white rounded-lg shadow-sm">
-            <h4 className="font-bold text-gray-700 mb-2">Location ({job.distance})</h4>
-            <div className="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden border border-gray-200">
-                 <iframe title="map" src={job.mapUrl} width="100%" height="200" style={{border:0}} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"></iframe>
+            <h4 className="font-bold text-gray-700 mb-2">Directions to Customer</h4>
+             <div className="aspect-w-16 aspect-h-12 rounded-lg overflow-hidden border border-gray-200 mt-2">
+                <WorkerDirectionsMap 
+                    origin={workerPosition} 
+                    destination={job.address} 
+                />
             </div>
-            <a href={job.directionsUrl} target="_blank" rel="noopener noreferrer" className="block w-full text-center mt-4 bg-gray-100 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200">Get Directions</a>
         </div>
 
         <PaymentSection />
@@ -99,4 +100,3 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
     </div>
   );
 };
-

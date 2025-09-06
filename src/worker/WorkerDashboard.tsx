@@ -14,31 +14,29 @@ export const WorkerDashboard = () => {
     const [worker, setWorker] = useState<User | null>(null);
     const [workerProfile, setWorkerProfile] = useState<Profile | null>(null);
     const [authLoading, setAuthLoading] = useState(true);
-    
-    // --- NEW: Ref to hold the watchPosition ID ---
     const watchId = useRef<number | null>(null);
+    
+    // State to hold the worker's live position
+    const [workerPosition, setWorkerPosition] = useState<{ lat: number, lng: number } | null>(null);
 
     const {
         filteredJobs, loading, currentLanguage, activeTab, activeJob, otpConfig, hasActiveJob,
         switchLanguage, setActiveTab, selectJob, deselectJob, acceptJob, verifyOtp, showOtpModal, hideOtpModal, confirmPayment
     } = useWorkerData(worker);
 
-    // --- NEW: Function to start tracking location ---
     const startLocationTracking = () => {
         if (!navigator.geolocation) {
-            console.error("Geolocation is not supported by this browser.");
+            console.error("Geolocation is not supported.");
             return;
         }
-
-        // Stop any previous tracking
-        if (watchId.current !== null) {
-            navigator.geolocation.clearWatch(watchId.current);
-        }
+        if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
 
         watchId.current = navigator.geolocation.watchPosition(
             async (position) => {
                 if (worker) {
                     const { latitude, longitude } = position.coords;
+                    // Update both the local state and the database
+                    setWorkerPosition({ lat: latitude, lng: longitude });
                     await supabase.from('worker_locations').upsert({
                         worker_id: worker.id,
                         lat: latitude,
@@ -52,7 +50,6 @@ export const WorkerDashboard = () => {
         );
     };
     
-    // --- NEW: Function to stop tracking location ---
     const stopLocationTracking = () => {
         if (watchId.current !== null) {
             navigator.geolocation.clearWatch(watchId.current);
@@ -60,18 +57,13 @@ export const WorkerDashboard = () => {
         }
     };
     
-    // --- NEW: useEffect to manage tracking based on job status ---
     useEffect(() => {
         if (hasActiveJob) {
             startLocationTracking();
         } else {
             stopLocationTracking();
         }
-
-        // Cleanup on component unmount
-        return () => {
-            stopLocationTracking();
-        };
+        return () => stopLocationTracking();
     }, [hasActiveJob, worker]);
 
 
@@ -144,7 +136,9 @@ export const WorkerDashboard = () => {
                         language={currentLanguage} 
                         onBack={deselectJob} 
                         onShowOtp={showOtpModal} 
-                        onConfirmPayment={confirmPayment} 
+                        onConfirmPayment={confirmPayment}
+                        // Pass the live position to the details page
+                        workerPosition={workerPosition}
                     />
                 ) : (
                     <DashboardPage
