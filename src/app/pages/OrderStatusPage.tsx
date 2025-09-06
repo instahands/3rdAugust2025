@@ -1,10 +1,9 @@
-// src/app/pages/OrderStatusPage.tsx
-
 import { Order } from '../../shared/types/types';
 import SubPageHeader from '../components/common/SubPageHeader';
 import { PhoneIcon, UserCircleIcon } from '../components/common/Icons';
 import { Timer } from '../../worker/components/details/Timer'; 
-
+// --- THIS IS THE FIX: The import path has been corrected ---
+import WorkerMapTracker from '../components/orders/WorkerMapTracker'; 
 const ServiceTracker = ({ status }: { status: string }) => {
     const stages = ['Booked', 'Assigned', 'On the Way', 'Completed'];
     const currentStageIndex = stages.indexOf(status);
@@ -42,7 +41,7 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
     })();
 
     const CodPaymentPrompt = () => {
-      if (order.payment_method === 'cod' && order.payment_status === 'Pending' && order.tracking_status === 'Assigned') {
+      if (order.payment_method === 'cod' && order.payment_status === 'Pending' && (order.tracking_status === 'Assigned' || order.tracking_status === 'On the Way')) {
         return (
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
             <h3 className="font-bold text-blue-800">Payment Required</h3>
@@ -54,11 +53,18 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
       return null;
     }
 
-
     return (
         <div className="pb-24">
             <SubPageHeader title="Order Status" onBack={() => setPage('orders')} />
             <div className="max-w-2xl mx-auto px-4 space-y-6">
+                
+                {(order.tracking_status === 'Assigned' || order.tracking_status === 'On the Way') && order.worker_id && order.address && (
+                    <WorkerMapTracker 
+                        workerId={order.worker_id} 
+                        destinationAddress={`${order.address.street_address}, ${order.address.city}`} 
+                    />
+                )}
+
                 <ServiceTracker status={order.tracking_status} />
 
                 {(order.tracking_status === 'On the Way' || order.tracking_status === 'Completed') && (

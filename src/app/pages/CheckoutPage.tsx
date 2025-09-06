@@ -45,7 +45,7 @@ export default function CheckoutPage({ setPage, bookingDetails, addOrder, userIn
             address_id: bookingDetails.address.id,
             price: finalPrice,
             payment_method: paymentMethod,
-            payment_status: paymentMethod === 'cod' ? 'Pending' : 'Paid via App', // Fix: Set to 'Pending' for COD
+            payment_status: 'Pending', // Default to Pending for all orders initially
             status: 'Pending',
             tracking_status: 'Booked',
         };
@@ -62,7 +62,8 @@ export default function CheckoutPage({ setPage, bookingDetails, addOrder, userIn
                 description: `Payment for ${service.name}`,
                 handler: async function (response: any) {
                     console.log('Payment successful', response);
-                    await addOrder(orderData);
+                    const prepaidOrderData = { ...orderData, payment_status: 'Paid via App' };
+                    await addOrder(prepaidOrderData);
                 },
                 prefill: {
                     name: userInfo?.name,

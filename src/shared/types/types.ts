@@ -43,10 +43,8 @@ export interface Order {
   end_time?: string | null;
   address?: Address | null;
   worker?: Profile | null;
-  // --- UPDATED PAYMENT FIELDS ---
   payment_method: 'cod' | 'prepaid';
   payment_status: 'Pending' | 'Paid via App' | 'Paid via Cash' | 'Paid via Worker QR' | 'Failed';
-  cod_payment_choice?: 'cash' | 'online' | null;
 }
 
 
@@ -69,6 +67,15 @@ export interface Notification {
   type: 'order' | 'user';
   createdAt: Date;
 }
+
+// --- NEW: Add this interface for worker locations ---
+export interface WorkerLocation {
+    worker_id: string;
+    lat: number;
+    lng: number;
+    updated_at: string;
+}
+
 
 export type DataItem = Profile | Order | Address;
 

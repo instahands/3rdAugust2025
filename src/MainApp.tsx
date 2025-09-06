@@ -23,11 +23,16 @@ const BottomNavBar = ({ setPage, currentPage }: { setPage: (page: string) => voi
     ];
     const isAccountSubPage = currentPage ? ['profileDetails', 'savedAddresses', 'notifications', 'helpCenter', 'about', 'referral'].includes(currentPage) : false;
     const isServiceSubPage = currentPage ? ['booking', 'checkout', 'confirmation', 'orderStatus'].includes(currentPage) : false;
+    
+    let activeItem = currentPage;
+    if (isAccountSubPage) activeItem = 'account';
+    else if (isServiceSubPage) activeItem = 'orders';
+
     return (
         <nav className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t z-40">
             <div className="flex justify-around py-2">
                 {navItems.map(item => (
-                    <button key={item.name} onClick={() => setPage(item.name)} className={`flex-1 flex flex-col items-center p-2 transition-colors duration-200 ${(currentPage === item.name || (item.name === 'account' && isAccountSubPage) || (item.name === 'home' && !isServiceSubPage) || (item.name === 'orders' && isServiceSubPage)) ? 'text-green-600' : 'text-gray-500 hover:text-green-500'}`}>
+                    <button key={item.name} onClick={() => setPage(item.name)} className={`flex-1 flex flex-col items-center p-2 transition-colors duration-200 ${activeItem === item.name ? 'text-green-600' : 'text-gray-500 hover:text-green-500'}`}>
                         {item.icon}
                         <span className="text-xs mt-1">{item.label}</span>
                     </button>
@@ -50,9 +55,8 @@ export default function MainApp() {
     const refreshData = () => setDataVersion(v => v + 1);
     const [activeOrder, setActiveOrder] = useState<Order | null>(null);
 
-    // This function is now simpler and has no dependencies that would cause a loop.
     const fetchOrders = useCallback(async (userId: string) => {
-        const { data, error } = await supabase.from('orders').select('*, address:addresses!address_id(*), worker:profiles!worker_id(name, phone)').eq('user_id', userId).order('date', { ascending: false });
+        const { data, error } = await supabase.from('orders').select('*, address:addresses!address_id(*), worker:profiles!worker_id(name, phone)').eq('user_id', userId).order('created_at', { ascending: false });
         if (error) {
             console.error('Error fetching orders:', error);
         } else {
@@ -60,17 +64,6 @@ export default function MainApp() {
         }
     }, []);
 
-    useEffect(() => {
-        const hash = window.location.hash;
-        if (hash.includes('#ref=')) {
-            const code = hash.split('=')[1];
-            if (code) {
-                localStorage.setItem('referral_code', code);
-            }
-        }
-    }, []);
-
-    // This hook only handles authentication state changes.
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const user = session?.user ?? null;
@@ -80,7 +73,12 @@ export default function MainApp() {
                 if (!user.user_metadata?.name) {
                     setPage('profileSetup');
                 } else {
-                    setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
+                    const hash = window.location.hash.substring(1);
+                    if (hash && !['home', 'orders', 'account', 'auth', 'profileSetup'].includes(hash)) {
+                        setPage(hash);
+                    } else {
+                         setPage(currentPage => (currentPage === 'auth' || currentPage === 'profileSetup' || currentPage === null ? 'home' : currentPage));
+                    }
                 }
             } else {
                 setOrders([]);
@@ -90,23 +88,17 @@ export default function MainApp() {
         return () => subscription.unsubscribe();
     }, [fetchOrders]);
     
-    // This separate hook handles the Realtime subscription.
     useEffect(() => {
         if (!currentUser) return;
-
         const ordersSubscription = supabase
             .channel(`public:orders:user-${currentUser.id}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `user_id=eq.${currentUser.id}` }, () => {
                 fetchOrders(currentUser.id);
             })
             .subscribe();
-
-        return () => {
-            supabase.removeChannel(ordersSubscription);
-        };
+        return () => { supabase.removeChannel(ordersSubscription); };
     }, [currentUser, fetchOrders]);
 
-    // This hook keeps the active order in sync with the main orders list.
     useEffect(() => {
         if (page === 'orderStatus' && activeOrder) {
             const updatedActiveOrder = orders.find(o => o.id === activeOrder.id);
@@ -116,35 +108,37 @@ export default function MainApp() {
         }
     }, [orders, activeOrder, page]);
     
-    useEffect(() => { window.scrollTo(0, 0); }, [page]);
+    useEffect(() => { 
+        window.scrollTo(0, 0); 
+        if(page) {
+            window.location.hash = page;
+        }
+    }, [page]);
 
     const handleLogout = async () => { await supabase.auth.signOut(); };
 
-    const addOrder = async () => {
-        if (!currentUser || !bookingDetails) {
-            alert("Session expired or booking details are missing.");
-            setPage('home');
+    const addOrder = async (orderData: Partial<Order>) => {
+        if (!currentUser) {
+            alert("Session expired. Please log in again.");
+            setPage('auth');
             return;
         }
-        const { service, address, frequency, duration, date, timeSlot, workDescription } = bookingDetails;
-        if (!service || !address) {
-            alert("Service or address information is missing.");
-            setPage('booking');
-            return;
-        }
-        const basePrice = (duration / 60) * (service.price || 0);
-        let finalPrice = basePrice;
-        if (frequency === 'weekly') finalPrice *= 0.9;
-        if (frequency === 'monthly') finalPrice *= 0.85;
 
-        const orderToInsert = { user_id: currentUser.id, address_id: address.id, service_name: service.name, date, time_slot: timeSlot, duration, work_description: workDescription, price: finalPrice, status: 'Pending', tracking_status: 'Booked' };
-        const { data, error } = await supabase.from('orders').insert([orderToInsert]).select().single();
+        const finalOrderData = { ...orderData, user_id: currentUser.id };
+        
+        const { data: newOrder, error } = await supabase
+            .from('orders')
+            .insert(finalOrderData)
+            .select('*, address:addresses!address_id(*)')
+            .single();
 
         if (error) {
             console.error("DATABASE ERROR:", error);
             alert("Sorry, there was an error booking your service.");
-        } else {
-            setBookingDetails({ ...data, address, service });
+        } else if (newOrder) {
+            // Immediately update the local state with the new order for instant UI feedback.
+            setOrders(prevOrders => [newOrder as Order, ...prevOrders]);
+            setBookingDetails({ ...bookingDetails, ...newOrder });
             setPage('confirmation');
         }
     };
@@ -158,35 +152,8 @@ export default function MainApp() {
         setIsServiceDetailOpen(false);
         setPage('booking');
     };
-
-    // --- THIS IS THE FIX ---
-    // This function now saves new addresses before proceeding.
-    const proceedToCheckout = async (bookingData: any) => {
-        if (bookingData.address && !bookingData.address.created_at && currentUser) {
-            const newAddressToSave = {
-                user_id: currentUser.id,
-                address_type: bookingData.address.address_type,
-                street_address: bookingData.address.street_address,
-                city: bookingData.address.city,
-                state: bookingData.address.state,
-                postal_code: bookingData.address.postal_code,
-                phone_number: bookingData.address.phone_number,
-            };
-
-            const { data: savedAddress, error } = await supabase
-                .from('addresses')
-                .insert(newAddressToSave)
-                .select()
-                .single();
-
-            if (error) {
-                alert("Could not save the new address. Please try again.");
-                return;
-            }
-            bookingData.address = savedAddress;
-            refreshData();
-        }
-
+    
+    const proceedToCheckout = (bookingData: any) => {
         setBookingDetails(bookingData);
         setPage('checkout');
     };
@@ -211,12 +178,12 @@ export default function MainApp() {
             case 'profileSetup': return <ProfileSetupPage onProfileComplete={() => setPage('home')} />;
             case 'home': return <HomePage setPage={setPage} currentUser={currentUser} orders={orders} viewServiceDetail={viewServiceDetail} startBooking={startBooking} />;
             case 'booking': return <BookingPage setPage={setPage} service={selectedService} proceedToCheckout={proceedToCheckout} goBack={() => setPage('home')} currentUser={currentUser} dataVersion={dataVersion} openAddAddressModal={() => setIsAddModalOpen(true)} onEditAddress={handleEditAddress} />;
-            case 'checkout': return <CheckoutPage setPage={setPage} bookingDetails={bookingDetails} addOrder={addOrder} userInfo={currentUser?.user_metadata} />;
+            case 'checkout': return <CheckoutPage setPage={setPage} bookingDetails={bookingDetails} addOrder={addOrder} userInfo={currentUser} />;
             case 'confirmation': return <ConfirmationPage setPage={setPage} bookingDetails={bookingDetails} />;
             case 'orders': return <OrdersPage setPage={setPage} orders={orders} viewOrderStatus={viewOrderStatus} />;
             case 'orderStatus': return <OrderStatusPage setPage={setPage} order={activeOrder} />;
             case 'account': return <AccountPage setPage={setPage} currentUser={currentUser} handleLogout={handleLogout} />;
-            default: return <AuthPage />;
+            default: return <HomePage setPage={setPage} currentUser={currentUser} orders={orders} viewServiceDetail={viewServiceDetail} startBooking={startBooking} />;
         }
     };
     
@@ -229,4 +196,3 @@ export default function MainApp() {
         </div>
     );
 }
-

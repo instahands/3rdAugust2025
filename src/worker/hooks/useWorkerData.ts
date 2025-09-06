@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Job } from '../types/workerTypes';
 import { supabase } from '../../shared/lib/supabaseClient';
-import { User } from '@supabase/supabase-js';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { User, RealtimeChannel } from '@supabase/supabase-js';
+import { Order } from '../../shared/types/types';
 
 export const useWorkerData = (worker: User | null) => {
     const [jobs, setJobs] = useState<Job[]>([]);
@@ -33,15 +33,12 @@ export const useWorkerData = (worker: User | null) => {
                 address: order.address ? `${order.address.street_address}, ${order.address.city}`: 'N/A',
                 dateTime: new Date(order.date).toLocaleString(),
                 earning: order.price,
-                status: order.status === 'Pending' ? 'new' : order.tracking_status === 'Completed' ? 'completed' : 'ongoing',
-                statusDetail: order.tracking_status,
+                workerStatus: order.status === 'Completed' ? 'completed' : (order.status === 'Pending' && !order.worker_id) ? 'new' : 'ongoing',
                 workDetails_en: order.work_description,
                 workDetails_hi: order.work_description,
                 distance: 'Calculating...',
                 mapUrl: `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${order.address?.street_address},${order.address?.city}`,
                 directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${order.address?.street_address},${order.address?.city}`,
-                startTime: order.start_time,
-                endTime: order.end_time,
                 customerPhone: order.customerProfile?.phone
             }));
             setJobs(mappedJobs);
@@ -55,8 +52,7 @@ export const useWorkerData = (worker: User | null) => {
 
             const channel: RealtimeChannel = supabase.channel(`public:orders`)
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, 
-                (payload) => {
-                    console.log('Change received!', payload);
+                () => {
                     fetchJobs();
                 })
                 .subscribe();
@@ -67,52 +63,60 @@ export const useWorkerData = (worker: User | null) => {
         }
     }, [worker, fetchJobs]);
     
-
     const acceptJob = async (jobId: number) => {
         if (!worker) return;
         const { error } = await supabase.from('orders').update({ worker_id: worker.id, status: 'Assigned', tracking_status: 'Assigned' }).eq('id', jobId);
         if (error) console.error("Error accepting job:", error);
-        else fetchJobs();
+        else await fetchJobs();
     };
 
     const verifyOtp = async (otp: string) => {
         if (!otpConfig.jobId || !otpConfig.action) return;
 
-        const job = jobs.find(j => j.id === otpConfig.jobId);
-        if (!job) return;
+        const { data: order, error: fetchError } = await supabase
+            .from('orders')
+            .select('start_otp, complete_otp')
+            .eq('id', otpConfig.jobId)
+            .single();
+
+        if (fetchError || !order) {
+            alert('Error fetching job details. Please try again.');
+            console.error('OTP Fetch Error:', fetchError);
+            return;
+        }
 
         const otpField = otpConfig.action === 'start' ? 'start_otp' : 'complete_otp';
-        const newTrackingStatus = otpConfig.action === 'start' ? 'On the Way' : 'Completed';
-        const timeField = otpConfig.action === 'start' ? 'start_time' : 'end_time';
-
-        if (job[otpField] === otp) {
-            const updateData: any = { tracking_status: newTrackingStatus };
-            updateData[timeField] = new Date().toISOString();
+        
+        if (order[otpField] === otp) {
+            const newTrackingStatus = otpConfig.action === 'start' ? 'On the Way' : 'Completed';
+            const timeField = otpConfig.action === 'start' ? 'start_time' : 'end_time';
             
-            if(newTrackingStatus === 'Completed') {
+            const updateData: Partial<Order> = { tracking_status: newTrackingStatus };
+            (updateData as any)[timeField] = new Date().toISOString();
+            
+            if (newTrackingStatus === 'Completed') {
                 updateData.status = 'Completed';
             }
 
-            const { error } = await supabase.from('orders').update(updateData).eq('id', otpConfig.jobId);
-            if (error) console.error("Error updating job status:", error);
-            else {
+            const { error: updateError } = await supabase.from('orders').update(updateData).eq('id', otpConfig.jobId);
+
+            if (updateError) {
+                alert('Failed to update job status.');
+                console.error("Error updating job status:", updateError);
+            } else {
                 hideOtpModal();
-                fetchJobs();
+                await fetchJobs();
             }
         } else {
-            alert('Invalid OTP');
+            alert('Invalid OTP. Please try again.');
         }
     };
     
     const confirmPayment = async (jobId: number, method: 'Cash' | 'Worker QR') => {
         const { error } = await supabase.from('orders').update({ payment_status: `Paid via ${method}` }).eq('id', jobId);
         if (error) console.error("Error confirming payment:", error);
-        else {
-            fetchJobs();
-            deselectJob();
-        }
+        else await fetchJobs();
     };
-
 
     const switchLanguage = () => setCurrentLanguage(lang => lang === 'en' ? 'hi' : 'en');
     const selectJob = (jobId: number) => setActiveJobId(jobId);
@@ -124,15 +128,15 @@ export const useWorkerData = (worker: User | null) => {
     
     const getJobsByStatus = (status: 'new' | 'ongoing' | 'completed') => {
         switch (status) {
-            case 'new': return jobs.filter(j => j.status === 'new' && !j.worker_id);
-            case 'ongoing': return jobs.filter(j => j.worker_id === worker?.id && j.status === 'ongoing');
-            case 'completed': return jobs.filter(j => j.worker_id === worker?.id && j.status === 'completed');
+            case 'new': return jobs.filter(j => j.workerStatus === 'new');
+            case 'ongoing': return jobs.filter(j => j.worker_id === worker?.id && j.workerStatus === 'ongoing');
+            case 'completed': return jobs.filter(j => j.worker_id === worker?.id && j.workerStatus === 'completed');
             default: return [];
         }
     };
     const filteredJobs = getJobsByStatus(activeTab);
 
-    const hasActiveJob = jobs.some(job => job.worker_id === worker?.id && job.status === 'ongoing');
+    const hasActiveJob = jobs.some(job => job.worker_id === worker?.id && job.workerStatus === 'ongoing');
 
     return {
         filteredJobs,

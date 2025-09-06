@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
 import { useWorkerData } from './hooks/useWorkerData';
@@ -14,6 +14,66 @@ export const WorkerDashboard = () => {
     const [worker, setWorker] = useState<User | null>(null);
     const [workerProfile, setWorkerProfile] = useState<Profile | null>(null);
     const [authLoading, setAuthLoading] = useState(true);
+    
+    // --- NEW: Ref to hold the watchPosition ID ---
+    const watchId = useRef<number | null>(null);
+
+    const {
+        filteredJobs, loading, currentLanguage, activeTab, activeJob, otpConfig, hasActiveJob,
+        switchLanguage, setActiveTab, selectJob, deselectJob, acceptJob, verifyOtp, showOtpModal, hideOtpModal, confirmPayment
+    } = useWorkerData(worker);
+
+    // --- NEW: Function to start tracking location ---
+    const startLocationTracking = () => {
+        if (!navigator.geolocation) {
+            console.error("Geolocation is not supported by this browser.");
+            return;
+        }
+
+        // Stop any previous tracking
+        if (watchId.current !== null) {
+            navigator.geolocation.clearWatch(watchId.current);
+        }
+
+        watchId.current = navigator.geolocation.watchPosition(
+            async (position) => {
+                if (worker) {
+                    const { latitude, longitude } = position.coords;
+                    await supabase.from('worker_locations').upsert({
+                        worker_id: worker.id,
+                        lat: latitude,
+                        lng: longitude,
+                        updated_at: new Date().toISOString()
+                    });
+                }
+            },
+            (error) => console.error("Geolocation Error:", error),
+            { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+        );
+    };
+    
+    // --- NEW: Function to stop tracking location ---
+    const stopLocationTracking = () => {
+        if (watchId.current !== null) {
+            navigator.geolocation.clearWatch(watchId.current);
+            watchId.current = null;
+        }
+    };
+    
+    // --- NEW: useEffect to manage tracking based on job status ---
+    useEffect(() => {
+        if (hasActiveJob) {
+            startLocationTracking();
+        } else {
+            stopLocationTracking();
+        }
+
+        // Cleanup on component unmount
+        return () => {
+            stopLocationTracking();
+        };
+    }, [hasActiveJob, worker]);
+
 
     const checkWorkerSession = useCallback(async () => {
         setAuthLoading(true);
@@ -48,12 +108,6 @@ export const WorkerDashboard = () => {
         });
         return () => subscription.unsubscribe();
     }, [checkWorkerSession]);
-
-    const {
-        filteredJobs, loading, currentLanguage, activeTab, activeJob, otpConfig, hasActiveJob,
-        switchLanguage, setActiveTab, selectJob, deselectJob, acceptJob, verifyOtp, showOtpModal, hideOtpModal, confirmPayment
-    } = useWorkerData(worker);
-
 
     const handleLogout = async () => {
         await supabase.auth.signOut();

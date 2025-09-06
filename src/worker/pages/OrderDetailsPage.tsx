@@ -52,22 +52,22 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
   return (
     <div>
       <header className="bg-white p-4 shadow-md sticky top-0 z-10 flex items-center">
-        <button onClick={onBack} className="mr-4 text-gray-600">&#x2190;</button>
+        <button onClick={onBack} className="mr-4 text-gray-600">←</button>
         <h2 className="text-lg font-bold text-gray-800">{language === 'en' ? 'Job Details' : 'कार्य विवरण'}</h2>
       </header>
       <div className="p-4 space-y-4 pb-24">
-        {/* Job Details */}
         <div className="p-4 bg-white rounded-lg shadow-sm">
             <h3 className="font-bold text-xl mb-2">{language === 'en' ? job.service_en : job.service_hi}</h3>
             <p className="text-gray-600 text-sm">{job.dateTime}</p>
         </div>
 
-        {/* Timer */}
         {(job.tracking_status === 'On the Way' || job.tracking_status === 'Completed') && (
-            <Timer startTime={job.startTime} endTime={job.endTime} language={language} isCompleted={job.tracking_status === 'Completed'} />
+            // --- THIS IS THE FIX ---
+            // We use `?? null` to ensure that if job.start_time is undefined,
+            // we pass `null` to the Timer, satisfying its type requirement.
+            <Timer startTime={job.start_time ?? null} endTime={job.end_time} language={language} isCompleted={job.tracking_status === 'Completed'} />
         )}
         
-        {/* Customer Details */}
         <div className="p-4 bg-white rounded-lg shadow-sm">
             <h4 className="font-bold text-gray-700 mb-2">Customer Details</h4>
             <p className="text-gray-800">{job.customerName}</p>
@@ -75,13 +75,11 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
              <a href={`tel:${job.customerPhone}`} className="text-sm text-green-600 font-semibold">{job.customerPhone}</a>
         </div>
         
-        {/* Work Details */}
         <div className="p-4 bg-white rounded-lg shadow-sm">
             <h4 className="font-bold text-gray-700 mb-2">Work Details</h4>
             <p className="text-gray-600 text-sm">{language === 'en' ? job.workDetails_en : job.workDetails_hi}</p>
         </div>
 
-        {/* Map */}
         <div className="p-4 bg-white rounded-lg shadow-sm">
             <h4 className="font-bold text-gray-700 mb-2">Location ({job.distance})</h4>
             <div className="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden border border-gray-200">
@@ -101,3 +99,4 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
     </div>
   );
 };
+
