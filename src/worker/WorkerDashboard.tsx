@@ -137,7 +137,6 @@ export const WorkerDashboard = () => {
                         onBack={deselectJob} 
                         onShowOtp={showOtpModal} 
                         onConfirmPayment={confirmPayment}
-                        // Pass the live position to the details page
                         workerPosition={workerPosition}
                     />
                 ) : (
