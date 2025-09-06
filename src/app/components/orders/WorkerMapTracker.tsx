@@ -8,7 +8,7 @@ interface WorkerMapTrackerProps {
     destinationAddress: string;
 }
 
-const mapContainerStyle = { width: '100%', height: '300px' };
+const mapContainerStyle = { width: '100%', height: '300px', borderRadius: '0.75rem' };
 
 const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProps) => {
     const { isLoaded } = useJsApiLoader({
@@ -18,6 +18,7 @@ const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProp
 
     const [workerPosition, setWorkerPosition] = useState<{ lat: number; lng: number } | null>(null);
     const [destinationPosition, setDestinationPosition] = useState<{ lat: number; lng: number } | null>(null);
+    const [subscriptionStatus, setSubscriptionStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
     const mapRef = useRef<google.maps.Map | null>(null);
 
     useEffect(() => {
@@ -42,15 +43,20 @@ const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProp
                 { event: '*', schema: 'public', table: 'worker_locations', filter: `worker_id=eq.${workerId}` },
                 (payload) => {
                     const newLocation = payload.new;
-                    // --- THIS IS THE FIX ---
-                    // Safely check if the newLocation object has lat/lng properties before using them.
-                    // This handles events like DELETE where `payload.new` would be an empty object.
                     if (newLocation && 'lat' in newLocation && 'lng' in newLocation) {
                         setWorkerPosition({ lat: newLocation.lat, lng: newLocation.lng });
                     }
                 }
             )
-            .subscribe();
+            .subscribe((status, err) => {
+                 if (status === 'SUBSCRIBED') {
+                    setSubscriptionStatus('connected');
+                }
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
+                    setSubscriptionStatus('error');
+                    console.error('Subscription error:', err);
+                }
+            });
 
         return () => {
             supabase.removeChannel(channel);
@@ -62,36 +68,51 @@ const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProp
             const bounds = new window.google.maps.LatLngBounds();
             bounds.extend(new window.google.maps.LatLng(workerPosition.lat, workerPosition.lng));
             bounds.extend(new window.google.maps.LatLng(destinationPosition.lat, destinationPosition.lng));
-            mapRef.current.fitBounds(bounds);
+            // Add some padding to the bounds
+            mapRef.current.fitBounds(bounds, 50); 
         }
     }, [workerPosition, destinationPosition, isLoaded]);
 
-    if (!isLoaded) return <div>Loading Map...</div>;
+    if (!isLoaded) return <div className="w-full h-[300px] flex items-center justify-center bg-gray-200 rounded-lg"><p>Loading Map...</p></div>;
 
     const center = destinationPosition || { lat: 21.1925, lng: 81.3522 };
 
     return (
-        <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            center={center}
-            zoom={12}
-            onLoad={(map) => { mapRef.current = map; }}
-            options={{ disableDefaultUI: true, zoomControl: true }}
-        >
-            {destinationPosition && (
-                <Marker position={destinationPosition} label="You" />
-            )}
-            {workerPosition && (
-                <Marker 
-                    position={workerPosition} 
-                    icon={{
-                        url: 'https://img.icons8.com/plasticine/100/scooter.png',
-                        scaledSize: new window.google.maps.Size(50, 50),
-                    }}
-                />
-            )}
-        </GoogleMap>
+        <div className="bg-white p-4 rounded-xl shadow">
+             <h3 className="font-bold text-lg mb-3">Live Tracking</h3>
+            <div className="rounded-lg overflow-hidden">
+                <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={center}
+                    zoom={12}
+                    onLoad={(map) => { mapRef.current = map; }}
+                    options={{ disableDefaultUI: true, zoomControl: true }}
+                >
+                    {destinationPosition && (
+                        <Marker position={destinationPosition} label={{ text: "You", color: "white", fontWeight: "bold" }} />
+                    )}
+                    {workerPosition && (
+                        <Marker 
+                            position={workerPosition} 
+                            // --- THIS IS THE FIX: Using a new, more descriptive icon ---
+                            icon={{
+                                url: 'https://img.icons8.com/bubbles/100/delivery-scooter.png',
+                                scaledSize: new window.google.maps.Size(60, 60),
+                                anchor: new window.google.maps.Point(30, 30),
+                            }}
+                        />
+                    )}
+                </GoogleMap>
+            </div>
+             <div className="text-xs text-center text-gray-500 pt-2">
+                {subscriptionStatus === 'connecting' && 'Connecting to live location...'}
+                {subscriptionStatus === 'connected' && !workerPosition && 'Waiting for worker location update...'}
+                {subscriptionStatus === 'connected' && workerPosition && 'Live location active.'}
+                {subscriptionStatus === 'error' && 'Could not connect to live location.'}
+            </div>
+        </div>
     );
 };
 
 export default WorkerMapTracker;
+
