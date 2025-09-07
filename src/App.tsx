@@ -5,7 +5,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 // Import your page and layout components
 import LandingPage from "./app/pages/LandingPage"; // Assuming this exists
 import MainApp from "./MainApp"; 
-import AdminPanel from "./admin/AdminPanel"; 
+import { AdminPanel } from "./admin/AdminPanel"; 
 
 // 1. Import the WorkerDashboard component
 import { WorkerDashboard } from "./worker/WorkerDashboard";

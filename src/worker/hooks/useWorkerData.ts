@@ -65,7 +65,7 @@ export const useWorkerData = (worker: User | null) => {
     
     const acceptJob = async (jobId: number) => {
         if (!worker) return;
-        const { error } = await supabase.from('orders').update({ worker_id: worker.id, status: 'Assigned', tracking_status: 'Assigned' }).eq('id', jobId);
+        const { error } = await supabase.from('orders').update({ worker_id: worker.id, status: 'Assigned', tracking_status: 'On the Way' }).eq('id', jobId);
         if (error) console.error("Error accepting job:", error);
         else await fetchJobs();
     };
@@ -88,7 +88,7 @@ export const useWorkerData = (worker: User | null) => {
         const otpField = otpConfig.action === 'start' ? 'start_otp' : 'complete_otp';
         
         if (order[otpField] === otp) {
-            const newTrackingStatus = otpConfig.action === 'start' ? 'On the Way' : 'Completed';
+            const newTrackingStatus = otpConfig.action === 'start' ? 'Work Started' : 'Completed';
             const timeField = otpConfig.action === 'start' ? 'start_time' : 'end_time';
             
             const updateData: Partial<Order> = { tracking_status: newTrackingStatus };

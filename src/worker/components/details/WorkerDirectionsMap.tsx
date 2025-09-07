@@ -1,5 +1,3 @@
-// src/worker/components/details/WorkerDirectionsMap.tsx
-
 import { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from '@react-google-maps/api';
 
@@ -91,5 +89,3 @@ const WorkerDirectionsMap = ({ origin, destination, geolocationError }: WorkerDi
         </GoogleMap>
     );
 };
-
-export default WorkerDirectionsMap;

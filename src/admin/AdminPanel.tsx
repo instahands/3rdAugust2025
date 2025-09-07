@@ -15,7 +15,7 @@ import Modal from './components/shared/Modal';
 import FormComponent from './components/shared/FormComponent';
 import { useAdminData } from './hooks/useAdminData';
 
-const AdminPanel = () => {
+export const AdminPanel = () => {
     const [activePage, setActivePage] = useState('Dashboard');
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [isDarkMode, setDarkMode] = useState(false);
@@ -226,5 +226,3 @@ const AdminPanel = () => {
         </div>
     );
 };
-
-export default AdminPanel;

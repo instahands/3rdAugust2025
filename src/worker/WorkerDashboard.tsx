@@ -1,5 +1,3 @@
-// src/worker/WorkerDashboard.tsx
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -19,7 +17,7 @@ export const WorkerDashboard = () => {
     const watchId = useRef<number | null>(null);
     
     // State to hold the worker's live position
-    const [workerPosition, setWorkerPosition] = useState<{ lat: number, lng: number } | null>(null);
+    const [workerPosition, setWorkerPosition] = useState<{ lat: number; lng: number } | null>(null);
     // NEW: State to store any geolocation errors
     const [geolocationError, setGeolocationError] = useState<string | null>(null);
 
@@ -132,7 +130,8 @@ export const WorkerDashboard = () => {
 
     if (workerProfile.worker_status === 'approved') {
         const otpMessages = {
-            start: { en: { title: 'OTP to Start Work', message: 'Please enter the 4-digit OTP from the customer to start the work.' }, hi: { title: 'काम शुरू करने के लिए OTP', message: 'काम शुरू करने के लिए ग्राहक से 4 अंकों का OTP दर्ज करें।' } },
+            start: { en: { title: 'OTP to Start Work', message: 'Please enter the 4-digit OTP from the customer to start the work.' }, hi: { title: 'काम शुरू करने के लिए OTP', message: 'काम शुरू करने के लिए ग्राहक से 4 अंकों का OTP दर्ज करें।' } }
+            ,
             complete: { en: { title: 'OTP to Complete Work', message: 'Please enter the 4-digit OTP from the customer to complete the work.' }, hi: { title: 'काम पूरा करने के लिए OTP', message: 'काम पूरा करने के लिए ग्राहक से 4 अंकों का OTP दर्ज करें।' } }
         };
         const currentOtpContent = otpConfig.action ? otpMessages[otpConfig.action][currentLanguage] : { title: '', message: '' };

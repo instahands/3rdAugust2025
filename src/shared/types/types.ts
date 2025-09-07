@@ -20,7 +20,7 @@ export interface Service {
     description: string;
     imageUrl: string;
     trainedTo: string[];
-    equippedWith: string[];
+    needs: string[];
     excluded: string[];
 }
 
@@ -36,7 +36,7 @@ export interface Order {
   price?: number;
   status: 'Pending' | 'Assigned' | 'Completed' | 'Cancelled';
   time_slot: string;
-  tracking_status: 'Booked' | 'Assigned' | 'On the Way' | 'Completed';
+  tracking_status: 'Booked' | 'Assigned' | 'On the Way' | 'Arrived' | 'Work Started' | 'Completed';
   start_otp?: string;
   complete_otp?: string;
   start_time?: string | null;
@@ -65,7 +65,7 @@ export interface Notification {
   message: string;
   isRead: boolean;
   type: 'order' | 'user';
-  createdAt: Date;
+  timestamp: Date;
 }
 
 // --- NEW: Add this interface for worker locations ---
