@@ -1,14 +1,17 @@
+// src/worker/components/details/WorkerDirectionsMap.tsx
+
 import { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from '@react-google-maps/api';
 
 interface WorkerDirectionsMapProps {
     origin: { lat: number; lng: number } | null;
     destination: string;
+    geolocationError: string | null;
 }
 
 const mapContainerStyle = { width: '100%', height: '100%' };
 
-const WorkerDirectionsMap = ({ origin, destination }: WorkerDirectionsMapProps) => {
+const WorkerDirectionsMap = ({ origin, destination, geolocationError }: WorkerDirectionsMapProps) => {
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script-directions',
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
@@ -40,6 +43,10 @@ const WorkerDirectionsMap = ({ origin, destination }: WorkerDirectionsMapProps) 
         return <div className="flex items-center justify-center h-full bg-gray-200"><p>Loading Map...</p></div>;
     }
     
+    if (geolocationError) {
+         return <div className="flex items-center justify-center h-full bg-red-100 text-red-600 p-4"><p>Location Error: {geolocationError}. Please ensure location services are enabled.</p></div>;
+    }
+
     if (!origin) {
          return <div className="flex items-center justify-center h-full bg-gray-200"><p>Waiting for your location...</p></div>;
     }

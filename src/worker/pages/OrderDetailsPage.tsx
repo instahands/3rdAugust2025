@@ -9,9 +9,10 @@ interface OrderDetailsPageProps {
   onShowOtp: (jobId: number, action: 'start' | 'complete') => void;
   onConfirmPayment: (jobId: number, method: 'Cash' | 'Worker QR') => void;
   workerPosition: { lat: number; lng: number } | null;
+  geolocationError: string | null;
 }
 
-export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPayment, workerPosition }: OrderDetailsPageProps) => {
+export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPayment, workerPosition, geolocationError }: OrderDetailsPageProps) => {
     
   const canStartWork = job.payment_method === 'prepaid' || (job.payment_method === 'cod' && job.payment_status.startsWith('Paid'));
 
@@ -84,7 +85,8 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
              <div className="aspect-w-16 aspect-h-12 rounded-lg overflow-hidden border border-gray-200 mt-2">
                 <WorkerDirectionsMap 
                     origin={workerPosition} 
-                    destination={job.address} 
+                    destination={job.address}
+                    geolocationError={geolocationError}
                 />
             </div>
         </div>

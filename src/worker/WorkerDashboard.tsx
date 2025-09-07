@@ -1,3 +1,5 @@
+// src/worker/WorkerDashboard.tsx
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -18,6 +20,8 @@ export const WorkerDashboard = () => {
     
     // State to hold the worker's live position
     const [workerPosition, setWorkerPosition] = useState<{ lat: number, lng: number } | null>(null);
+    // NEW: State to store any geolocation errors
+    const [geolocationError, setGeolocationError] = useState<string | null>(null);
 
     const {
         filteredJobs, loading, currentLanguage, activeTab, activeJob, otpConfig, hasActiveJob,
@@ -27,6 +31,7 @@ export const WorkerDashboard = () => {
     const startLocationTracking = () => {
         if (!navigator.geolocation) {
             console.error("Geolocation is not supported.");
+            setGeolocationError("Your browser does not support geolocation.");
             return;
         }
         if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current);
@@ -37,6 +42,7 @@ export const WorkerDashboard = () => {
                     const { latitude, longitude } = position.coords;
                     // Update both the local state and the database
                     setWorkerPosition({ lat: latitude, lng: longitude });
+                    setGeolocationError(null); // Clear any previous errors
                     await supabase.from('worker_locations').upsert({
                         worker_id: worker.id,
                         lat: latitude,
@@ -45,7 +51,10 @@ export const WorkerDashboard = () => {
                     });
                 }
             },
-            (error) => console.error("Geolocation Error:", error),
+            (error) => {
+                console.error("Geolocation Error:", error);
+                setGeolocationError(error.message); // Set the error message
+            },
             { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
         );
     };
@@ -138,6 +147,7 @@ export const WorkerDashboard = () => {
                         onShowOtp={showOtpModal} 
                         onConfirmPayment={confirmPayment}
                         workerPosition={workerPosition}
+                        geolocationError={geolocationError}
                     />
                 ) : (
                     <DashboardPage
