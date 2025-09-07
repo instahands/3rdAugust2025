@@ -1,5 +1,8 @@
+// src/worker/pages/OrderDetailsPage.tsx (CORRECTED)
+
 import { Job } from '../types/workerTypes';
 import { Timer } from '../components/details/Timer';
+// FIX: Corrected import to use a default export
 import WorkerDirectionsMap from '../components/details/WorkerDirectionsMap';
 import { supabase } from '../../shared/lib/supabaseClient';
 
@@ -21,7 +24,6 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
     if (error) {
       console.error("Error updating status:", error);
     }
-    // Note: The onAuthStateChange listener in WorkerDashboard will re-fetch data.
   };
 
   const ActionButton = () => {
