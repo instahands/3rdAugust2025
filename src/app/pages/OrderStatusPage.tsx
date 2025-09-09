@@ -41,7 +41,8 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
     })();
 
     const CodPaymentPrompt = () => {
-      if (order.payment_method === 'cod' && order.payment_status === 'Pending' && (order.tracking_status === 'Assigned' || order.tracking_status === 'On the Way')) {
+      // FIX 1: The payment prompt should be visible until the payment is not pending, and regardless of the tracking status (as long as it's not completed)
+      if (order.payment_method === 'cod' && order.payment_status === 'Pending' && order.tracking_status !== 'Completed') {
         return (
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
             <h3 className="font-bold text-blue-800">Payment Required</h3>
@@ -90,6 +91,7 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
                         <div className="p-4 bg-gray-50 rounded-lg flex items-center space-x-4">
                             <UserCircleIcon className="h-12 w-12 text-gray-400" />
                             <div>
+                                {/* FIX 2: Correctly display the worker's name and phone number if available */}
                                 <p className="font-semibold">{order.worker?.name || 'InstaHands Professional'}</p>
                                 <a href={`tel:${order.worker?.phone}`} className="text-sm text-green-600 flex items-center">
                                     <PhoneIcon className="h-4 w-4 mr-1" />
