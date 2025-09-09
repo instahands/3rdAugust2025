@@ -56,7 +56,8 @@ export default function MainApp() {
     const [activeOrder, setActiveOrder] = useState<Order | null>(null);
 
     const fetchOrders = useCallback(async (userId: string) => {
-        const { data, error } = await supabase.from('orders').select('*, address:addresses!address_id(*), worker:profiles!worker_id(name, phone)').eq('user_id', userId).order('created_at', { ascending: false });
+        // FIX: The select statement has been updated to explicitly join the worker profile
+        const { data, error } = await supabase.from('orders').select('*, address:addresses!address_id(*), worker:profiles!worker_id(*)').eq('user_id', userId).order('created_at', { ascending: false });
         if (error) {
             console.error('Error fetching orders:', error);
         } else {
@@ -123,9 +124,30 @@ export default function MainApp() {
             setPage('auth');
             return;
         }
-
-        const finalOrderData = { ...orderData, user_id: currentUser.id };
         
+        let finalOrderData = { ...orderData, user_id: currentUser.id };
+        
+        // FIX: Handle addresses created via MapPicker separately
+        if (finalOrderData.address && !finalOrderData.address.id) {
+            const { id, ...newAddressData } = finalOrderData.address;
+            const { data: insertedAddress, error: addressError } = await supabase
+                .from('addresses')
+                .insert({ ...newAddressData, user_id: currentUser.id })
+                .select()
+                .single();
+            
+            if (addressError || !insertedAddress) {
+                console.error("DATABASE ERROR: Failed to insert new address.", addressError);
+                alert("Sorry, there was an error saving your address.");
+                return;
+            }
+            
+            finalOrderData = { ...finalOrderData, address_id: insertedAddress.id, address: insertedAddress };
+        } else if (finalOrderData.address) {
+            // If the address already has an ID, just use it
+            finalOrderData.address_id = finalOrderData.address.id;
+        }
+
         const { data: newOrder, error } = await supabase
             .from('orders')
             .insert(finalOrderData)
