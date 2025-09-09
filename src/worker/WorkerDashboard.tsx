@@ -41,12 +41,17 @@ export const WorkerDashboard = () => {
                     // Update both the local state and the database
                     setWorkerPosition({ lat: latitude, lng: longitude });
                     setGeolocationError(null); // Clear any previous errors
-                    await supabase.from('worker_locations').upsert({
+                    const { error } = await supabase.from('worker_locations').upsert({
                         worker_id: worker.id,
                         lat: latitude,
                         lng: longitude,
                         updated_at: new Date().toISOString()
                     });
+                     if (error) {
+                        console.error("Error updating worker location:", error);
+                    } else {
+                        console.log("Worker location updated successfully.");
+                    }
                 }
             },
             (error) => {
