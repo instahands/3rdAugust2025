@@ -58,9 +58,10 @@ interface Popup {
 // --- THE REACT COMPONENT ---
 const LandingPage = () => {
     const { isLoaded } = useJsApiLoader({
-        id: 'google-map-script',
+        // FIX: Use a consistent ID and libraries to prevent conflicts
+        id: 'google-map-script-main',
         googleMapsApiKey: API_KEY as string,
-        libraries: ['places'],
+        libraries: ['places', 'marker'],
     });
 
     // --- Component State ---
@@ -466,4 +467,3 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
-

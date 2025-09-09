@@ -13,8 +13,10 @@ const mapContainerStyle = { width: '100%', height: '100%' };
 
 const WorkerDirectionsMap = ({ origin, destination, geolocationError }: WorkerDirectionsMapProps) => {
     const { isLoaded } = useJsApiLoader({
-        id: 'google-map-script-directions',
+        // FIX: Use a consistent ID and libraries to prevent conflicts
+        id: 'google-map-script-main',
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+        libraries: ['places', 'marker'],
     });
 
     const [directionsResponse, setDirectionsResponse] = useState<google.maps.DirectionsResult | null>(null);

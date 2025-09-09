@@ -56,8 +56,11 @@ export default function MainApp() {
     const [activeOrder, setActiveOrder] = useState<Order | null>(null);
 
     const fetchOrders = useCallback(async (userId: string) => {
-        // FIX: The select statement has been updated to explicitly join the worker profile
-        const { data, error } = await supabase.from('orders').select('*, address:addresses!address_id(*), worker:profiles!worker_id(*)').eq('user_id', userId).order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('orders')
+            .select('*, address:addresses!address_id(*), worker:profiles!worker_id(name, phone)')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
         if (error) {
             console.error('Error fetching orders:', error);
         } else {

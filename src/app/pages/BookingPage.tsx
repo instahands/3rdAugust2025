@@ -1,3 +1,5 @@
+// src/pages/BookingPage.tsx (FINAL UX TWEAKS)
+
 import { useState, useEffect } from 'react';
 import { supabase } from '../../shared/lib/supabaseClient';
 import SubPageHeader from '../components/common/SubPageHeader';

@@ -12,8 +12,10 @@ const mapContainerStyle = { width: '100%', height: '300px', borderRadius: '0.75r
 
 const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProps) => {
     const { isLoaded } = useJsApiLoader({
-        id: 'google-map-script',
+        // FIX: Use a consistent ID and libraries to prevent conflicts
+        id: 'google-map-script-main',
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+        libraries: ['places', 'marker'],
     });
 
     const [workerPosition, setWorkerPosition] = useState<{ lat: number; lng: number } | null>(null);

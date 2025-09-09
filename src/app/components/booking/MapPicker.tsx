@@ -27,6 +27,7 @@ const mapOptions = {
   // ],
 };
 
+// FIX: Standardize the libraries and ID to prevent conflicts
 const libraries: ("places" | "marker")[] = ["places", "marker"];
 
 const MapPicker: React.FC<MapPickerProps> = ({
@@ -41,6 +42,8 @@ const MapPicker: React.FC<MapPickerProps> = ({
   const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
 
   const { isLoaded } = useJsApiLoader({
+    // FIX: Use a consistent ID and libraries
+    id: 'google-map-script-main',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries,
   });
