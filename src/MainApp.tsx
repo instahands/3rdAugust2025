@@ -121,18 +121,18 @@ export default function MainApp() {
 
     const handleLogout = async () => { await supabase.auth.signOut(); };
 
-   const addOrder = async (orderData: Partial<Order>) => {
+   // src/MainApp.tsx (CORRECTED)
+
+const addOrder = async (orderData: Partial<Order>) => {
     if (!currentUser) {
         alert("Session expired. Please log in again.");
         setPage('auth');
         return;
     }
-        
-        let finalOrderData = { ...orderData, user_id: currentUser.id };
-        
-        // FIX: Handle addresses created via MapPicker separately
-        // If the address was created via the map, it won't have an ID yet.
-    // We need to insert it into the 'addresses' table first.
+    
+    let finalOrderData = { ...orderData, user_id: currentUser.id };
+    
+    // FIX: Handle addresses created via MapPicker separately
     if (finalOrderData.address && !finalOrderData.address.id) {
         const { id, ...newAddressData } = finalOrderData.address;
         const { data: insertedAddress, error: addressError } = await supabase
@@ -140,21 +140,20 @@ export default function MainApp() {
             .insert({ ...newAddressData, user_id: currentUser.id })
             .select()
             .single();
-            
-            if (addressError || !insertedAddress) {
+        
+        if (addressError || !insertedAddress) {
             console.error("DATABASE ERROR: Failed to insert new address.", addressError);
             alert("Sorry, there was an error saving your address.");
             return;
         }
-
-            
-            // Now that we have a proper address with an ID, we can create the order.
+        
         finalOrderData = { ...finalOrderData, address_id: insertedAddress.id, address: insertedAddress };
     } else if (finalOrderData.address) {
-        // If the address already has an ID, just use it.
+        // If the address already has an ID, just use it
         finalOrderData.address_id = finalOrderData.address.id;
     }
-const { data: newOrder, error } = await supabase
+
+    const { data: newOrder, error } = await supabase
         .from('orders')
         .insert(finalOrderData)
         .select('*, address:addresses!address_id(*), worker:profiles!worker_id(*)')
@@ -164,6 +163,7 @@ const { data: newOrder, error } = await supabase
         console.error("DATABASE ERROR:", error);
         alert("Sorry, there was an error booking your service.");
     } else if (newOrder) {
+        // Immediately update the local state with the new order for instant UI feedback.
         setOrders(prevOrders => [newOrder as Order, ...prevOrders]);
         setBookingDetails({ ...bookingDetails, ...newOrder });
         setPage('confirmation');
