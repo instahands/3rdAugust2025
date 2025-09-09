@@ -1,3 +1,5 @@
+// src/worker/WorkerDashboard.tsx
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';

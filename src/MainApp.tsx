@@ -1,3 +1,5 @@
+// src/MainApp.tsx
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -57,7 +59,7 @@ export default function MainApp() {
 
     const fetchOrders = useCallback(async (userId: string) => {
         const { data, error } = await supabase.from('orders')
-            .select('*, address:addresses!address_id(*), worker:profiles!worker_id(name, phone)')
+            .select('*, address:addresses!address_id(*), worker:profiles!worker_id(*)')
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
 
@@ -154,7 +156,7 @@ export default function MainApp() {
         const { data: newOrder, error } = await supabase
             .from('orders')
             .insert(finalOrderData)
-            .select('*, address:addresses!address_id(*)')
+            .select('*, address:addresses!address_id(*), worker:profiles!worker_id(*)')
             .single();
 
         if (error) {
