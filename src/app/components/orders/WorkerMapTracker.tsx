@@ -115,4 +115,3 @@ const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProp
 };
 
 export default WorkerMapTracker;
-

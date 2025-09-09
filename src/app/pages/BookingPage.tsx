@@ -1,5 +1,3 @@
-// src/pages/BookingPage.tsx (FINAL UX TWEAKS)
-
 import { useState, useEffect } from 'react';
 import { supabase } from '../../shared/lib/supabaseClient';
 import SubPageHeader from '../components/common/SubPageHeader';
@@ -54,14 +52,8 @@ export default function BookingPage({ setPage, service, proceedToCheckout, goBac
 
     const isSlotInThePast = (slot: string, date: string): boolean => {
         const today = new Date();
-        if (date !== today.toISOString().split('T')[0]) { return false; }
-        const currentHour = today.getHours();
-        const hourString = slot.split(':')[0];
-        const period = slot.split(' ')[1];
-        let slotHour = parseInt(hourString, 10);
-        if (period === 'PM' && slotHour !== 12) slotHour += 12;
-        if (period === 'AM' && slotHour === 12) slotHour = 0;
-        return slotHour <= currentHour;
+        const slotDateTime = new Date(`${date}T${slot.split(' ')[0]}:00`);
+        return slotDateTime.getTime() < today.getTime();
     };
 
     useEffect(() => {
