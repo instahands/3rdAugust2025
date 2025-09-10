@@ -43,13 +43,20 @@ export const useWorkerData = (worker: User | null) => {
                 customerPhone: order.customerProfile?.phone
             }));
             setJobs(mappedJobs);
-            const completedJobs = mappedJobs.filter(j => j.worker_id === worker.id && j.workerStatus === 'completed');
-            const total = completedJobs.reduce((sum, job) => sum + (job.earning || 0), 0);
-            setTotalEarnings(total);
         }
         setLoading(false);
     }, [worker]);
 
+    useEffect(() => {
+        if (worker && jobs.length > 0) {
+            const completedJobs = jobs.filter(j => j.worker_id === worker.id && j.workerStatus === 'completed');
+            const total = completedJobs.reduce((sum, job) => sum + (job.earning || 0), 0);
+            setTotalEarnings(total);
+        } else {
+            setTotalEarnings(0); // Reset if there are no jobs or no worker
+        }
+    }, [jobs, worker]);
+    
     useEffect(() => {
         if (worker) {
             fetchJobs();
