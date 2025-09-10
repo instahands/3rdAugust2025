@@ -67,15 +67,25 @@ export const useWorkerData = (worker: User | null) => {
     }, [worker, fetchJobs]);
     
     useEffect(() => {
+        console.log("--- DEBUGGER ---");
+        console.log("Calculation effect triggered. Worker exists:", !!worker, "Jobs count:", jobs.length);
+
         // Only calculate if there is a worker and the jobs array is not empty.
         // This prevents the total from being reset to 0 during re-renders.
         if (worker && jobs.length > 0) {
             const completedJobs = jobs.filter(j => j.worker_id === worker.id && j.workerStatus === 'completed');
-            const total = completedJobs.reduce((sum, job) => sum + (job.earning || 0), 0);
-            setTotalEarnings(total);
-        }
-    }, [jobs, worker]);
+            console.log("Found completed jobs:", completedJobs.length, completedJobs);
 
+            const total = completedJobs.reduce((sum, job) => sum + (job.earning || 0), 0);
+            console.log("Calculated Total:", total);
+            
+            setTotalEarnings(total);
+        } else {
+            console.log("Conditions not met. Not calculating.");
+        }
+        console.log("--- END DEBUGGER ---");
+    }, [jobs, worker]);
+    
     const acceptJob = async (jobId: number) => {
         if (!worker) return;
         const { error } = await supabase.from('orders').update({ worker_id: worker.id, status: 'Assigned', tracking_status: 'On the Way' }).eq('id', jobId);
