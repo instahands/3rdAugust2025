@@ -53,7 +53,7 @@ export default function MainApp() {
     const [editingAddress, setEditingAddress] = useState<Address | null>(null);
     const [dataVersion, setDataVersion] = useState(0);
     const refreshData = () => setDataVersion(v => v + 1);
-    const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+    const [activeOrderId, setActiveOrderId] = useState<number | null>(null);
 
     const fetchOrders = useCallback(async (userId: string) => {
         const { data, error } = await supabase.from('orders')
@@ -102,15 +102,6 @@ export default function MainApp() {
             .subscribe();
         return () => { supabase.removeChannel(ordersSubscription); };
     }, [currentUser, fetchOrders]);
-
-    useEffect(() => {
-        if (page === 'orderStatus' && activeOrder) {
-            const updatedActiveOrder = orders.find(o => o.id === activeOrder.id);
-            if (updatedActiveOrder && JSON.stringify(updatedActiveOrder) !== JSON.stringify(activeOrder)) {
-                setActiveOrder(updatedActiveOrder);
-            }
-        }
-    }, [orders, activeOrder, page]);
     
     useEffect(() => { 
         window.scrollTo(0, 0); 
@@ -191,9 +182,9 @@ const addOrder = async (orderData: Partial<Order>) => {
     };
 
     const viewOrderStatus = (order: Order) => {
-        setActiveOrder(order);
-        setPage('orderStatus');
-    };
+    setActiveOrderId(order.id);
+    setPage('orderStatus');
+};
 
     const renderPage = () => {
         if (page === null) {
@@ -208,7 +199,11 @@ const addOrder = async (orderData: Partial<Order>) => {
             case 'checkout': return <CheckoutPage setPage={setPage} bookingDetails={bookingDetails} addOrder={addOrder} userInfo={currentUser} />;
             case 'confirmation': return <ConfirmationPage setPage={setPage} bookingDetails={bookingDetails} />;
             case 'orders': return <OrdersPage setPage={setPage} orders={orders} viewOrderStatus={viewOrderStatus} />;
-            case 'orderStatus': return <OrderStatusPage setPage={setPage} order={activeOrder} />;
+           case 'orderStatus': {
+            // Find the most current version of the active order from the main list
+            const activeOrder = orders.find(o => o.id === activeOrderId);
+            return <OrderStatusPage setPage={setPage} order={activeOrder || null} />;
+        }
             case 'account': return <AccountPage setPage={setPage} currentUser={currentUser} handleLogout={handleLogout} />;
             default: return <HomePage setPage={setPage} currentUser={currentUser} orders={orders} viewServiceDetail={viewServiceDetail} startBooking={startBooking} />;
         }
