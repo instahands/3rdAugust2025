@@ -5,7 +5,7 @@ import { Timer } from '../../worker/components/details/Timer';
 // --- THIS IS THE FIX: The import path has been corrected ---
 import WorkerMapTracker from '../components/orders/WorkerMapTracker'; 
 const ServiceTracker = ({ status }: { status: string }) => {
-    const stages = ['Booked', 'Assigned', 'On the Way', 'Completed'];
+    const stages = ['Booked', 'Assigned', 'On the Way', 'Arrived', 'Work Started', 'Completed'];
     const currentStageIndex = stages.indexOf(status);
     return (
         <div className="my-6">
