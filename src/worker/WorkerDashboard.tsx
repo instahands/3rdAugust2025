@@ -11,6 +11,7 @@ import { OtpModal } from './components/shared/OtpModal';
 import { WorkerOnboardingPage } from './pages/WorkerOnboardingPage';
 import { WorkerPendingPage } from './pages/WorkerPendingPage';
 import { Profile } from '../shared/types/types';
+import { ProfilePage } from './pages/ProfilePage';
 
 export const WorkerDashboard = () => {
     const [worker, setWorker] = useState<User | null>(null);
@@ -20,6 +21,7 @@ export const WorkerDashboard = () => {
     
     const [workerPosition, setWorkerPosition] = useState<{ lat: number; lng: number } | null>(null);
     const [geolocationError, setGeolocationError] = useState<string | null>(null);
+    const [activeWorkerPage, setActiveWorkerPage] = useState<'dashboard' | 'profile'>('dashboard');
 
     const {
         jobs, // Get the full, unfiltered list of jobs
@@ -177,11 +179,18 @@ export const WorkerDashboard = () => {
                         workerPosition={workerPosition}
                         geolocationError={geolocationError}
                     />
+                ) : activeWorkerPage === 'profile' ? (
+                    <ProfilePage 
+                        workerProfile={workerProfile}
+                        onBack={() => setActiveWorkerPage('dashboard')}
+                        onLogout={handleLogout}
+                    />
                 ) : (
                     <DashboardPage
                         jobs={filteredJobs}
                         language={currentLanguage}
                         activeTab={activeTab}
+                        totalEarnings={totalEarnings}
                         onTabChange={setActiveTab}
                         onSelectJob={selectJob}
                         onAcceptJob={acceptJob}
@@ -189,7 +198,7 @@ export const WorkerDashboard = () => {
                         onLogout={handleLogout}
                         isLoading={loading}
                         hasActiveJob={hasActiveJob}
-                        totalEarnings={totalEarnings}
+                        onGoToProfile={() => setActiveWorkerPage('profile')}
                     />
                 )}
                 <OtpModal isOpen={otpConfig.isOpen} onClose={hideOtpModal} onVerify={verifyOtp} title={currentOtpContent.title} message={currentOtpContent.message} />

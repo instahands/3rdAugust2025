@@ -2,6 +2,12 @@
 import { Job } from '../types/workerTypes';
 import { JobCard } from '../components/dashboard/JobCard';
 
+const UserIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+);
+
 interface DashboardPageProps {
   jobs: Job[];
   language: 'en' | 'hi';
@@ -14,6 +20,7 @@ interface DashboardPageProps {
   isLoading: boolean;
   totalEarnings: number; 
   hasActiveJob: boolean;
+  onGoToProfile: () => void;
 }
 
 export const DashboardPage = ({ 
@@ -26,10 +33,8 @@ export const DashboardPage = ({
     onSwitchLanguage, 
     onLogout, 
     isLoading,
-    
-    // --- THIS IS THE FIX ---
-    // The component now accepts the new prop.
     hasActiveJob,
+    onGoToProfile,
     totalEarnings
 }: DashboardPageProps) => {
   const tabs: Array<'new' | 'ongoing' | 'completed'> = ['new', 'ongoing', 'completed'];
@@ -45,12 +50,15 @@ export const DashboardPage = ({
             <div>
                 <h1 className="text-xl font-bold text-gray-800">InstaHands Worker</h1>
             </div>
-            <div>
-                <button onClick={onSwitchLanguage} className="text-sm font-semibold mr-4">{language === 'en' ? 'हिन्दी' : 'English'}</button>
+            <div className="flex items-center space-x-4">
+                <button onClick={onGoToProfile} className="text-gray-500 hover:text-blue-600" title="My Profile">
+                    <UserIcon />
+                </button>
+                <button onClick={onSwitchLanguage} className="text-sm font-semibold">{language === 'en' ? 'हिन्दी' : 'English'}</button>
                 <button onClick={onLogout} className="text-sm font-semibold text-red-500">Logout</button>
             </div>
         </div>
-
+        
         <div className="mt-4 p-4 bg-green-500 text-white rounded-lg text-center">
             <p className="text-sm font-medium uppercase tracking-wider">{language === 'en' ? 'Total Earnings' : 'कुल कमाई'}</p>
             <p className="text-3xl font-bold">₹{(totalEarnings || 0).toFixed(2)}</p>
