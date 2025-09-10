@@ -92,6 +92,7 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
         <button onClick={onBack} className="mr-4 text-gray-600">←</button>
         <h2 className="text-lg font-bold text-gray-800">{language === 'en' ? 'Job Details' : 'कार्य विवरण'}</h2>
       </header>
+
       <div className="p-4 space-y-4 pb-24">
         <div className="p-4 bg-white rounded-lg shadow-sm">
           <h3 className="font-bold text-xl mb-2">{language === 'en' ? job.service_en : job.service_hi}</h3>
@@ -100,6 +101,24 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
 
         {(job.tracking_status === 'Work Started' || job.tracking_status === 'Completed') && (
           <Timer startTime={job.start_time ?? null} endTime={job.end_time} language={language} isCompleted={job.tracking_status === 'Completed'} />
+        )}
+        
+        {job.tracking_status === 'Completed' && (
+          <div className="p-4 bg-white rounded-lg shadow-sm border border-green-300">
+            <h4 className="font-bold text-gray-700 mb-2">
+              {language === 'en' ? 'Payment Details' : 'भुगतान विवरण'}
+            </h4>
+            <div className="space-y-1 text-gray-800">
+              <p>
+                <strong>{language === 'en' ? 'Final Earning:' : 'अंतिम कमाई:'}</strong>
+                <span className="font-bold text-green-600 ml-2">₹{job.earning}</span>
+              </p>
+              <p>
+                <strong>{language === 'en' ? 'Payment Status:' : 'भुगतान की स्थिति:'}</strong>
+                <span className="ml-2">{job.payment_status}</span>
+              </p>
+            </div>
+          </div>
         )}
         
         <div className="p-4 bg-white rounded-lg shadow-sm">
