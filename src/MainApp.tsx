@@ -126,14 +126,8 @@ const addOrder = async (orderData: Partial<Order>) => {
     // FIX: Handle addresses created via MapPicker separately
     try {
         // Check if the address is a temporary one created by the map picker
-        console.log("Checking address type:", finalOrderData.address?.address_type);
         if (finalOrderData.address && finalOrderData.address.address_type === 'Pinned Location') {
-            
-            console.log("Pinned Location address detected. Attempting to save it first.");
-            
             const { id, ...newAddressData } = finalOrderData.address;
-            console.log("Address data to be inserted:", newAddressData);
-
             const { data: insertedAddress, error: addressError } = await supabase
                 .from('addresses')
                 .insert({ ...newAddressData, user_id: currentUser.id })
@@ -145,19 +139,15 @@ const addOrder = async (orderData: Partial<Order>) => {
                 throw addressError;
             }
             
-            console.log("Successfully inserted new address:", insertedAddress);
             
             // Update the order data to use the newly created address ID
             finalOrderData.address_id = insertedAddress.id;
             finalOrderData.address = insertedAddress;
 
         } else if (finalOrderData.address) {
-            console.log("Existing address detected. Using its ID:", finalOrderData.address.id);
             finalOrderData.address_id = finalOrderData.address.id;
         }
         delete finalOrderData.address; // Remove the full address object to avoid redundancy
-        console.log("Final order data before insertion:", finalOrderData);
-
         // Now, create the order with a valid address_id
         const { data: newOrder, error: orderError } = await supabase
             .from('orders')
@@ -169,13 +159,11 @@ const addOrder = async (orderData: Partial<Order>) => {
             throw orderError;
         }
 
-        console.log("--- DEBUG: Order created successfully! ---", newOrder);
         setOrders(prevOrders => [newOrder as Order, ...prevOrders]);
         setBookingDetails({ ...bookingDetails, ...newOrder });
         setPage('confirmation');
 
     } catch (error: any) {
-        console.error("DATABASE ERROR in addOrder:", error);
         alert(`Sorry, there was an error booking your service: ${error.message}`);
     }
 };
