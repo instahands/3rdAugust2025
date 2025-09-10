@@ -67,12 +67,12 @@ export const useWorkerData = (worker: User | null) => {
     }, [worker, fetchJobs]);
     
     useEffect(() => {
+        // Only calculate if there is a worker and the jobs array is not empty.
+        // This prevents the total from being reset to 0 during re-renders.
         if (worker && jobs.length > 0) {
             const completedJobs = jobs.filter(j => j.worker_id === worker.id && j.workerStatus === 'completed');
             const total = completedJobs.reduce((sum, job) => sum + (job.earning || 0), 0);
             setTotalEarnings(total);
-        } else {
-            setTotalEarnings(0);
         }
     }, [jobs, worker]);
 
