@@ -5,9 +5,8 @@ import { CalendarIcon, LocationPinIcon } from '../common/Icons';
 import { Order } from '../../../shared/types/types';
 
 const ServiceTracker = ({ status }: { status: string }) => {
-    const stages = ['Booked', 'Assigned', 'On the Way', 'Completed'];
+    const stages = ['Booked', 'Assigned', 'On the Way', 'Arrived', 'Work Started', 'Completed'];
     const currentStageIndex = stages.indexOf(status);
-
     return (
         <div className="mt-5">
             <div className="flex items-center">
