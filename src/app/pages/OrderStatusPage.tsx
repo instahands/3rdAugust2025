@@ -45,7 +45,7 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
         }
         return null;
     })();
-
+    
     const CodPaymentPrompt = () => {
       // FIX 1: The payment prompt should be visible until the payment is not pending, and regardless of the tracking status (as long as it's not completed)
       if (order.payment_method === 'cod' && order.payment_status === 'Pending' && order.tracking_status !== 'Completed') {
