@@ -53,9 +53,9 @@ export const DashboardPage = ({
 
         <div className="mt-4 p-4 bg-green-500 text-white rounded-lg text-center">
             <p className="text-sm font-medium uppercase tracking-wider">{language === 'en' ? 'Total Earnings' : 'कुल कमाई'}</p>
-            <p className="text-3xl font-bold">₹{totalEarnings.toFixed(2)}</p>
+            <p className="text-3xl font-bold">₹{(totalEarnings || 0).toFixed(2)}</p>
         </div>
-        
+
       </header>
       <main className="p-4 pb-20">
         <nav className="flex border-b border-gray-200 mb-4">
