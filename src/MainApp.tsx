@@ -124,40 +124,51 @@ const addOrder = async (orderData: Partial<Order>) => {
     let finalOrderData = { ...orderData, user_id: currentUser.id };
     
     // FIX: Handle addresses created via MapPicker separately
-    if (finalOrderData.address && !finalOrderData.address.id) {
-        const { id, ...newAddressData } = finalOrderData.address;
-        const { data: insertedAddress, error: addressError } = await supabase
-            .from('addresses')
-            .insert({ ...newAddressData, user_id: currentUser.id })
-            .select()
-            .single();
-        
-        if (addressError || !insertedAddress) {
-            console.error("DATABASE ERROR: Failed to insert new address.", addressError);
-            alert("Sorry, there was an error saving your address.");
-            return;
+    try {
+        // Check if the address is a temporary one created by the map picker
+        if (finalOrderData.address && finalOrderData.address.address_type === 'Pinned Location') {
+            
+            // Remove the temporary 'id' before inserting
+            const { id, ...newAddressData } = finalOrderData.address;
+
+            const { data: insertedAddress, error: addressError } = await supabase
+                .from('addresses')
+                .insert({ ...newAddressData, user_id: currentUser.id })
+                .select()
+                .single();
+            
+            if (addressError || !insertedAddress) {
+                throw addressError || new Error("Failed to save the new address.");
+            }
+            
+            // Update the order data to use the newly created address ID
+            finalOrderData.address_id = insertedAddress.id;
+            finalOrderData.address = insertedAddress;
+
+        } else if (finalOrderData.address) {
+            // If it's a pre-existing address, just use its ID
+            finalOrderData.address_id = finalOrderData.address.id;
         }
-        
-        finalOrderData = { ...finalOrderData, address_id: insertedAddress.id, address: insertedAddress };
-    } else if (finalOrderData.address) {
-        // If the address already has an ID, just use it
-        finalOrderData.address_id = finalOrderData.address.id;
-    }
 
-    const { data: newOrder, error } = await supabase
-        .from('orders')
-        .insert(finalOrderData)
-        .select('*, address:addresses!address_id(*), worker:profiles!worker_id(*)')
-        .single();
+        // Now, create the order with a valid address_id
+        const { data: newOrder, error: orderError } = await supabase
+            .from('orders')
+            .insert(finalOrderData)
+            .select('*, address:addresses!address_id(*), worker:profiles!worker_id(*)')
+            .single();
 
-    if (error) {
-        console.error("DATABASE ERROR:", error);
-        alert("Sorry, there was an error booking your service.");
-    } else if (newOrder) {
-        // Immediately update the local state with the new order for instant UI feedback.
+        if (orderError) {
+            throw orderError;
+        }
+
+        // If successful, proceed to confirmation
         setOrders(prevOrders => [newOrder as Order, ...prevOrders]);
         setBookingDetails({ ...bookingDetails, ...newOrder });
         setPage('confirmation');
+
+    } catch (error: any) {
+        console.error("DATABASE ERROR:", error);
+        alert(`Sorry, there was an error booking your service: ${error.message}`);
     }
 };
 
