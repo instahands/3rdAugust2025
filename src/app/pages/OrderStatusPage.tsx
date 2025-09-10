@@ -35,8 +35,14 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
     }
     
     const otpDetails = (() => {
-        if (order.tracking_status === 'Assigned') return { title: 'OTP to Start Work', description: 'Share this with the worker to begin the service.', otp: order.start_otp };
-        if (order.tracking_status === 'On the Way') return { title: 'OTP to Complete Work', description: 'Share this with the worker upon satisfactory completion.', otp: order.complete_otp };
+        // Show the START OTP if the status is Assigned, On the Way, OR Arrived
+        if (['Assigned', 'On the Way', 'Arrived'].includes(order.tracking_status)) {
+            return { title: 'OTP to Start Work', description: 'Share this with the worker to begin the service.', otp: order.start_otp };
+        }
+        // Show the COMPLETE OTP only after the work has started
+        if (order.tracking_status === 'Work Started') {
+            return { title: 'OTP to Complete Work', description: 'Share this with the worker upon satisfactory completion.', otp: order.complete_otp };
+        }
         return null;
     })();
 
