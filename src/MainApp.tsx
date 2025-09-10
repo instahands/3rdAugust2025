@@ -127,27 +127,29 @@ const addOrder = async (orderData: Partial<Order>) => {
     try {
         // Check if the address is a temporary one created by the map picker
         if (finalOrderData.address && finalOrderData.address.address_type === 'Pinned Location') {
+            
+            // Remove the temporary 'id' before inserting
             const { id, ...newAddressData } = finalOrderData.address;
+
             const { data: insertedAddress, error: addressError } = await supabase
                 .from('addresses')
                 .insert({ ...newAddressData, user_id: currentUser.id })
                 .select()
                 .single();
             
-            if (addressError) {
-                console.error("DATABASE ERROR while inserting address:", addressError);
-                throw addressError;
+            if (addressError || !insertedAddress) {
+                throw addressError || new Error("Failed to save the new address.");
             }
-            
             
             // Update the order data to use the newly created address ID
             finalOrderData.address_id = insertedAddress.id;
             finalOrderData.address = insertedAddress;
 
         } else if (finalOrderData.address) {
+            // If it's a pre-existing address, just use its ID
             finalOrderData.address_id = finalOrderData.address.id;
         }
-        delete finalOrderData.address; // Remove the full address object to avoid redundancy
+
         // Now, create the order with a valid address_id
         const { data: newOrder, error: orderError } = await supabase
             .from('orders')
@@ -159,11 +161,13 @@ const addOrder = async (orderData: Partial<Order>) => {
             throw orderError;
         }
 
+        // If successful, proceed to confirmation
         setOrders(prevOrders => [newOrder as Order, ...prevOrders]);
         setBookingDetails({ ...bookingDetails, ...newOrder });
         setPage('confirmation');
 
     } catch (error: any) {
+        console.error("DATABASE ERROR:", error);
         alert(`Sorry, there was an error booking your service: ${error.message}`);
     }
 };
