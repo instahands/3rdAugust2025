@@ -117,7 +117,7 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
         {(job.tracking_status === 'On the Way' || job.tracking_status === 'Arrived') && (
           <div className="p-4 bg-white rounded-lg shadow-sm">
             <h4 className="font-bold text-gray-700 mb-2">{language === 'en' ? 'Directions to Customer' : 'ग्राहक के लिए दिशा-निर्देश'}</h4>
-            <div className="aspect-w-16 aspect-h-12 rounded-lg overflow-hidden border border-gray-200 mt-2">
+            <div className="h-80 rounded-lg overflow-hidden border border-gray-200 mt-2">
               <WorkerDirectionsMap 
                 origin={workerPosition} 
                 destination={job.address}
