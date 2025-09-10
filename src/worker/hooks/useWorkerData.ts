@@ -1,3 +1,5 @@
+// src/worker/hooks/useWorkerData.ts (CORRECTED)
+
 import { useState, useEffect, useCallback } from 'react';
 import { Job } from '../types/workerTypes';
 import { supabase } from '../../shared/lib/supabaseClient';
@@ -24,7 +26,7 @@ export const useWorkerData = (worker: User | null) => {
 
         if (error) {
             console.error("Error fetching jobs:", error);
-            setJobs([]);
+            // --- FIX 1: Do not clear jobs on error, so the UI doesn't flicker ---
         } else if (data) {
             const mappedJobs: Job[] = data.map((order: any) => ({
                 ...order,
@@ -47,33 +49,6 @@ export const useWorkerData = (worker: User | null) => {
         setLoading(false);
     }, [worker]);
 
-     useEffect(() => {
-        console.log("--- DEBUG: Calculating Earnings ---");
-        console.log("Current worker ID:", worker?.id);
-        console.log("Total jobs in state:", jobs.length);
-
-        if (worker && jobs.length > 0) {
-            const completedJobs = jobs.filter(j => j.worker_id === worker.id && j.workerStatus === 'completed');
-            
-            // This will show us if the filter is finding the completed jobs
-            console.log("Found completed jobs for this worker:", completedJobs.length, completedJobs);
-
-            const total = completedJobs.reduce((sum, job) => {
-                const earningValue = job.earning || 0;
-                // This will show the value and type of each earning being added
-                console.log(`Adding earning: ${earningValue}, type: ${typeof earningValue}`);
-                return sum + earningValue;
-            }, 0);
-            
-            console.log("Calculated Total:", total);
-            setTotalEarnings(total);
-        } else {
-            console.log("Conditions not met (no worker or no jobs), setting total to 0.");
-            setTotalEarnings(0);
-        }
-        console.log("--- DEBUG: Calculation Finished ---");
-    }, [jobs, worker]);
-
     useEffect(() => {
         if (worker) {
             fetchJobs();
@@ -91,6 +66,16 @@ export const useWorkerData = (worker: User | null) => {
         }
     }, [worker, fetchJobs]);
     
+    useEffect(() => {
+        if (worker && jobs.length > 0) {
+            const completedJobs = jobs.filter(j => j.worker_id === worker.id && j.workerStatus === 'completed');
+            const total = completedJobs.reduce((sum, job) => sum + (job.earning || 0), 0);
+            setTotalEarnings(total);
+        } else {
+            setTotalEarnings(0);
+        }
+    }, [jobs, worker]);
+
     const acceptJob = async (jobId: number) => {
         if (!worker) return;
         const { error } = await supabase.from('orders').update({ worker_id: worker.id, status: 'Assigned', tracking_status: 'On the Way' }).eq('id', jobId);
