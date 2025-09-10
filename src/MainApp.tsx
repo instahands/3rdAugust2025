@@ -150,6 +150,8 @@ const addOrder = async (orderData: Partial<Order>) => {
             finalOrderData.address_id = finalOrderData.address.id;
         }
 
+        delete finalOrderData.address;
+
         // Now, create the order with a valid address_id
         const { data: newOrder, error: orderError } = await supabase
             .from('orders')
