@@ -1,6 +1,6 @@
-// src/worker/WorkerDashboard.tsx
+// src/worker/WorkerDashboard.tsx (FINAL, CORRECTED)
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '../shared/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
 import { useWorkerData } from './hooks/useWorkerData';
@@ -18,15 +18,38 @@ export const WorkerDashboard = () => {
     const [authLoading, setAuthLoading] = useState(true);
     const watchId = useRef<number | null>(null);
     
-    // State to hold the worker's live position
     const [workerPosition, setWorkerPosition] = useState<{ lat: number; lng: number } | null>(null);
-    // NEW: State to store any geolocation errors
     const [geolocationError, setGeolocationError] = useState<string | null>(null);
 
     const {
-        filteredJobs, loading, currentLanguage, activeTab, activeJob, otpConfig, hasActiveJob,
-        switchLanguage, setActiveTab, selectJob, deselectJob, acceptJob, verifyOtp, showOtpModal, hideOtpModal, confirmPayment
+        jobs, // Get the full, unfiltered list of jobs
+        filteredJobs, 
+        loading, 
+        currentLanguage, 
+        activeTab, 
+        activeJob, 
+        otpConfig, 
+        hasActiveJob,
+        switchLanguage, 
+        setActiveTab, 
+        selectJob, 
+        deselectJob, 
+        acceptJob, 
+        verifyOtp, 
+        showOtpModal, 
+        hideOtpModal, 
+        confirmPayment
     } = useWorkerData(worker);
+
+    // --- THIS IS THE NEW, ROBUST CALCULATION ---
+    const totalEarnings = useMemo(() => {
+        if (!worker || !jobs) return 0;
+        return jobs
+            .filter(j => j.worker_id === worker.id && j.workerStatus === 'completed')
+            .reduce((sum, job) => sum + (job.earning || 0), 0);
+    }, [jobs, worker]);
+
+    // ... (rest of the component is unchanged)
 
     const startLocationTracking = () => {
         if (!navigator.geolocation) {
@@ -40,9 +63,8 @@ export const WorkerDashboard = () => {
             async (position) => {
                 if (worker) {
                     const { latitude, longitude } = position.coords;
-                    // Update both the local state and the database
                     setWorkerPosition({ lat: latitude, lng: longitude });
-                    setGeolocationError(null); // Clear any previous errors
+                    setGeolocationError(null);
                     const { error } = await supabase.from('worker_locations').upsert({
                         worker_id: worker.id,
                         lat: latitude,
@@ -58,7 +80,7 @@ export const WorkerDashboard = () => {
             },
             (error) => {
                 console.error("Geolocation Error:", error);
-                setGeolocationError(error.message); // Set the error message
+                setGeolocationError(error.message);
             },
             { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
         );
@@ -167,6 +189,7 @@ export const WorkerDashboard = () => {
                         onLogout={handleLogout}
                         isLoading={loading}
                         hasActiveJob={hasActiveJob}
+                        totalEarnings={totalEarnings}
                     />
                 )}
                 <OtpModal isOpen={otpConfig.isOpen} onClose={hideOtpModal} onVerify={verifyOtp} title={currentOtpContent.title} message={currentOtpContent.message} />
