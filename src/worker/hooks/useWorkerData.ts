@@ -47,16 +47,33 @@ export const useWorkerData = (worker: User | null) => {
         setLoading(false);
     }, [worker]);
 
-    useEffect(() => {
+     useEffect(() => {
+        console.log("--- DEBUG: Calculating Earnings ---");
+        console.log("Current worker ID:", worker?.id);
+        console.log("Total jobs in state:", jobs.length);
+
         if (worker && jobs.length > 0) {
             const completedJobs = jobs.filter(j => j.worker_id === worker.id && j.workerStatus === 'completed');
-            const total = completedJobs.reduce((sum, job) => sum + (job.earning || 0), 0);
+            
+            // This will show us if the filter is finding the completed jobs
+            console.log("Found completed jobs for this worker:", completedJobs.length, completedJobs);
+
+            const total = completedJobs.reduce((sum, job) => {
+                const earningValue = job.earning || 0;
+                // This will show the value and type of each earning being added
+                console.log(`Adding earning: ${earningValue}, type: ${typeof earningValue}`);
+                return sum + earningValue;
+            }, 0);
+            
+            console.log("Calculated Total:", total);
             setTotalEarnings(total);
         } else {
-            setTotalEarnings(0); // Reset if there are no jobs or no worker
+            console.log("Conditions not met (no worker or no jobs), setting total to 0.");
+            setTotalEarnings(0);
         }
+        console.log("--- DEBUG: Calculation Finished ---");
     }, [jobs, worker]);
-    
+
     useEffect(() => {
         if (worker) {
             fetchJobs();
