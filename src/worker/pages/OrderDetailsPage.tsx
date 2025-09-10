@@ -110,7 +110,7 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
             </h4>
             <div className="space-y-1 text-gray-800">
               <p>
-                <strong>{language === 'en' ? 'Final Earning:' : 'अंतिम कमाई:'}</strong>
+                <strong>{language === 'en' ? 'Amount Paid:' : 'राशि का भुगतान:'}</strong>
                 <span className="font-bold text-green-600 ml-2">₹{job.earning}</span>
               </p>
               <p>
@@ -120,7 +120,7 @@ export const OrderDetailsPage = ({ job, language, onBack, onShowOtp, onConfirmPa
             </div>
           </div>
         )}
-        
+
         <div className="p-4 bg-white rounded-lg shadow-sm">
           <h4 className="font-bold text-gray-700 mb-2">{language === 'en' ? 'Customer Details' : 'ग्राहक विवरण'}</h4>
           <p className="text-gray-800">{job.customerName}</p>
