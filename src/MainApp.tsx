@@ -155,7 +155,7 @@ const addOrder = async (orderData: Partial<Order>) => {
             console.log("Existing address detected. Using its ID:", finalOrderData.address.id);
             finalOrderData.address_id = finalOrderData.address.id;
         }
-
+        delete finalOrderData.address; // Remove the full address object to avoid redundancy
         console.log("Final order data before insertion:", finalOrderData);
 
         // Now, create the order with a valid address_id
