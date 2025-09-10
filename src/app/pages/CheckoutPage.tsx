@@ -42,7 +42,7 @@ export default function CheckoutPage({ setPage, bookingDetails, addOrder, userIn
             time_slot: bookingDetails.timeSlot,
             duration: bookingDetails.duration,
             work_description: bookingDetails.workDescription,
-            address_id: bookingDetails.address.id,
+            address: bookingDetails.address, 
             price: finalPrice,
             payment_method: paymentMethod,
             payment_status: 'Pending', // Default to Pending for all orders initially
