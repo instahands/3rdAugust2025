@@ -12,8 +12,7 @@ interface DashboardPageProps {
   onSwitchLanguage: () => void;
   onLogout: () => void;
   isLoading: boolean;
-  // --- THIS IS THE FIX ---
-  // The interface now includes 'hasActiveJob'.
+  totalEarnings: number; 
   hasActiveJob: boolean;
 }
 
@@ -27,9 +26,11 @@ export const DashboardPage = ({
     onSwitchLanguage, 
     onLogout, 
     isLoading,
+    
     // --- THIS IS THE FIX ---
     // The component now accepts the new prop.
-    hasActiveJob 
+    hasActiveJob,
+    totalEarnings
 }: DashboardPageProps) => {
   const tabs: Array<'new' | 'ongoing' | 'completed'> = ['new', 'ongoing', 'completed'];
   const tabNames = {
@@ -49,6 +50,12 @@ export const DashboardPage = ({
                 <button onClick={onLogout} className="text-sm font-semibold text-red-500">Logout</button>
             </div>
         </div>
+
+        <div className="mt-4 p-4 bg-green-500 text-white rounded-lg text-center">
+            <p className="text-sm font-medium uppercase tracking-wider">{language === 'en' ? 'Total Earnings' : 'कुल कमाई'}</p>
+            <p className="text-3xl font-bold">₹{totalEarnings.toFixed(2)}</p>
+        </div>
+        
       </header>
       <main className="p-4 pb-20">
         <nav className="flex border-b border-gray-200 mb-4">
