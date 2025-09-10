@@ -11,6 +11,7 @@ export const useWorkerData = (worker: User | null) => {
     const [activeTab, setActiveTab] = useState<'new' | 'ongoing' | 'completed'>('new');
     const [activeJobId, setActiveJobId] = useState<number | null>(null);
     const [otpConfig, setOtpConfig] = useState<{ isOpen: boolean; action: 'start' | 'complete' | null; jobId: number | null }>({ isOpen: false, action: null, jobId: null });
+    const [totalEarnings, setTotalEarnings] = useState(0);
 
     const fetchJobs = useCallback(async () => {
         if (!worker) return;
@@ -42,6 +43,9 @@ export const useWorkerData = (worker: User | null) => {
                 customerPhone: order.customerProfile?.phone
             }));
             setJobs(mappedJobs);
+            const completedJobs = mappedJobs.filter(j => j.worker_id === worker.id && j.workerStatus === 'completed');
+            const total = completedJobs.reduce((sum, job) => sum + (job.earning || 0), 0);
+            setTotalEarnings(total);
         }
         setLoading(false);
     }, [worker]);
@@ -146,6 +150,7 @@ export const useWorkerData = (worker: User | null) => {
         activeJob,
         otpConfig,
         hasActiveJob,
+        totalEarnings,
         switchLanguage,
         setActiveTab,
         selectJob,
