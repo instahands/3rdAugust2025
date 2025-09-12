@@ -1,6 +1,6 @@
-// src/app/components/orders/WorkerMapTracker.tsx (CORRECTED AND CLEANED)
+// src/app/components/orders/WorkerMapTracker.tsx (CORRECTED)
 
-import { useState, useEffect } from 'react'; // <--- REMOVED useRef from here
+import { useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from '@react-google-maps/api';
 import { supabase } from '../../../shared/lib/supabaseClient';
 import { WorkerLocation } from '../../../shared/types/types';
@@ -22,8 +22,8 @@ const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProp
     const [workerPosition, setWorkerPosition] = useState<{ lat: number; lng: number } | null>(null);
     const [subscriptionStatus, setSubscriptionStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
     const [directionsResponse, setDirectionsResponse] = useState<google.maps.DirectionsResult | null>(null);
-    // const mapRef = useRef<google.maps.Map | null>(null); // <--- REMOVED this line
 
+    // This useEffect fetches the route when the worker's position is updated
     useEffect(() => {
         if (isLoaded && workerPosition && destinationAddress) {
             const directionsService = new window.google.maps.DirectionsService();
@@ -46,6 +46,24 @@ const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProp
 
 
     useEffect(() => {
+        // --- NEW: Function to fetch the initial location ---
+        const fetchInitialLocation = async () => {
+            const { data, error } = await supabase
+                .from('worker_locations')
+                .select('*')
+                .eq('worker_id', workerId)
+                .single();
+            
+            if (error) {
+                console.error("Error fetching initial worker location:", error.message);
+            } else if (data) {
+                setWorkerPosition({ lat: data.lat, lng: data.lng });
+            }
+        };
+
+        fetchInitialLocation(); // Call the function on component mount
+
+        // The real-time subscription remains the same
         const channel = supabase
             .channel(`public:worker_locations:worker_id=eq.${workerId}`)
             .on<WorkerLocation>(
@@ -71,7 +89,7 @@ const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProp
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [workerId]);
+    }, [workerId]); // Dependency array remains the same
 
     if (!isLoaded) return <div className="w-full h-[300px] flex items-center justify-center bg-gray-200 rounded-lg"><p>Loading Map...</p></div>;
 
@@ -85,7 +103,6 @@ const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProp
                     mapContainerStyle={mapContainerStyle}
                     center={center}
                     zoom={12}
-                    // onLoad={(map) => { mapRef.current = map; }} // <--- REMOVED this line
                     options={{ disableDefaultUI: true, zoomControl: true }}
                 >
                     {directionsResponse && (
