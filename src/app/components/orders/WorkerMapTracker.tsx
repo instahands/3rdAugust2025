@@ -1,7 +1,7 @@
-// src/app/components/orders/WorkerMapTracker.tsx
+// src/app/components/orders/WorkerMapTracker.tsx (CORRECTED AND CLEANED)
 
-import { useState, useEffect, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { useState, useEffect } from 'react'; // <--- REMOVED useRef from here
+import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from '@react-google-maps/api';
 import { supabase } from '../../../shared/lib/supabaseClient';
 import { WorkerLocation } from '../../../shared/types/types';
 
@@ -14,30 +14,36 @@ const mapContainerStyle = { width: '100%', height: '300px', borderRadius: '0.75r
 
 const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProps) => {
     const { isLoaded } = useJsApiLoader({
-        // FIX: Use a consistent ID and libraries to prevent conflicts
         id: 'google-map-script-main',
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
         libraries: ['places', 'marker'],
     });
 
     const [workerPosition, setWorkerPosition] = useState<{ lat: number; lng: number } | null>(null);
-    const [destinationPosition, setDestinationPosition] = useState<{ lat: number; lng: number } | null>(null);
     const [subscriptionStatus, setSubscriptionStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
-    const mapRef = useRef<google.maps.Map | null>(null);
+    const [directionsResponse, setDirectionsResponse] = useState<google.maps.DirectionsResult | null>(null);
+    // const mapRef = useRef<google.maps.Map | null>(null); // <--- REMOVED this line
 
     useEffect(() => {
-        if (isLoaded) {
-            const geocoder = new window.google.maps.Geocoder();
-            geocoder.geocode({ address: destinationAddress }, (results, status) => {
-                if (status === 'OK' && results && results[0]) {
-                    const { lat, lng } = results[0].geometry.location;
-                    setDestinationPosition({ lat: lat(), lng: lng() });
-                } else {
-                    console.error('Geocode was not successful for the following reason: ' + status);
+        if (isLoaded && workerPosition && destinationAddress) {
+            const directionsService = new window.google.maps.DirectionsService();
+            directionsService.route(
+                {
+                    origin: new window.google.maps.LatLng(workerPosition.lat, workerPosition.lng),
+                    destination: destinationAddress,
+                    travelMode: window.google.maps.TravelMode.DRIVING,
+                },
+                (result, status) => {
+                    if (status === window.google.maps.DirectionsStatus.OK) {
+                        setDirectionsResponse(result);
+                    } else {
+                        console.error(`Error fetching directions: ${status}`);
+                    }
                 }
-            });
+            );
         }
-    }, [destinationAddress, isLoaded]);
+    }, [isLoaded, workerPosition, destinationAddress]);
+
 
     useEffect(() => {
         const channel = supabase
@@ -66,20 +72,10 @@ const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProp
             supabase.removeChannel(channel);
         };
     }, [workerId]);
-    
-    useEffect(() => {
-        if (isLoaded && mapRef.current && workerPosition && destinationPosition) {
-            const bounds = new window.google.maps.LatLngBounds();
-            bounds.extend(new window.google.maps.LatLng(workerPosition.lat, workerPosition.lng));
-            bounds.extend(new window.google.maps.LatLng(destinationPosition.lat, destinationPosition.lng));
-            // Add some padding to the bounds
-            mapRef.current.fitBounds(bounds, 50); 
-        }
-    }, [workerPosition, destinationPosition, isLoaded]);
 
     if (!isLoaded) return <div className="w-full h-[300px] flex items-center justify-center bg-gray-200 rounded-lg"><p>Loading Map...</p></div>;
 
-    const center = destinationPosition || { lat: 21.1925, lng: 81.3522 };
+    const center = workerPosition || { lat: 21.1925, lng: 81.3522 };
 
     return (
         <div className="bg-white p-4 rounded-xl shadow">
@@ -89,16 +85,32 @@ const WorkerMapTracker = ({ workerId, destinationAddress }: WorkerMapTrackerProp
                     mapContainerStyle={mapContainerStyle}
                     center={center}
                     zoom={12}
-                    onLoad={(map) => { mapRef.current = map; }}
+                    // onLoad={(map) => { mapRef.current = map; }} // <--- REMOVED this line
                     options={{ disableDefaultUI: true, zoomControl: true }}
                 >
-                    {destinationPosition && (
-                        <Marker position={destinationPosition} label={{ text: "You", color: "white", fontWeight: "bold" }} />
+                    {directionsResponse && (
+                        <DirectionsRenderer 
+                            directions={directionsResponse}
+                            options={{ 
+                                suppressMarkers: true,
+                                polylineOptions: {
+                                    strokeColor: '#1a73e8',
+                                    strokeWeight: 6,
+                                },
+                            }}
+                        />
                     )}
+
+                    {directionsResponse && (
+                        <Marker 
+                            position={directionsResponse.routes[0].legs[0].end_location} 
+                            label={{ text: "You", color: "white", fontWeight: "bold" }} 
+                        />
+                    )}
+
                     {workerPosition && (
                         <Marker 
                             position={workerPosition} 
-                            // --- THIS IS THE FIX: Using a new, more descriptive icon ---
                             icon={{
                                 url: 'https://img.icons8.com/bubbles/100/delivery-scooter.png',
                                 scaledSize: new window.google.maps.Size(60, 60),
