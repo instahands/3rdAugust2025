@@ -74,7 +74,7 @@ export default function OrderStatusPage({ setPage, order }: { setPage: (page: st
 
                 <ServiceTracker status={order.tracking_status} />
 
-                {(order.tracking_status === 'On the Way' || order.tracking_status === 'Completed') && (
+                {(order.tracking_status === 'Work Started' || order.tracking_status === 'Completed') && (
                      <Timer startTime={order.start_time || null} endTime={order.end_time} language="en" isCompleted={order.tracking_status === 'Completed'} />
                 )}
 
