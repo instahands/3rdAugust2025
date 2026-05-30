@@ -8,6 +8,7 @@ import { Service } from '../../shared/types/types';
 import { UserIcon, SearchIcon} from '../components/common/Icons';
 import AdCarousel from '../components/home/AdCarousel';
 import ServiceGrid from '../components/home/ServiceGrid';
+import { useBanners } from '../../shared/hooks/useBanners';
 
 // --- REMOVED: Local interface declarations ---
 // The local Service and Order interfaces have been removed to avoid conflicts.
@@ -41,6 +42,8 @@ const HeaderLogo = () => (
 
 // --- Component remains the same, but now uses the correct types ---
 export default function HomePage({ setPage, currentUser, orders, viewServiceDetail, startBooking }: HomePageProps) {
+    const { banners } = useBanners();
+    const homePageBanners = banners.filter(banner => banner.page === 'home' && banner.section === 'carousel');
     const recentBookings = orders.filter(order => new Date(order.date) < new Date()).slice(0, 5);
 
     return (
@@ -60,7 +63,7 @@ export default function HomePage({ setPage, currentUser, orders, viewServiceDeta
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"><SearchIcon /></div>
             </div>
             
-            <AdCarousel />
+            <AdCarousel banners={homePageBanners} />
 
             <div>
                 <h2 className="text-lg font-bold text-gray-800 mb-4">Categories</h2>

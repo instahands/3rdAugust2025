@@ -1,13 +1,19 @@
 // src/components/home/AdCarousel.tsx
 
 import { useState, useEffect } from 'react';
+import { Banner } from '../../shared/types/types';
 
-const AdCarousel = () => {
-    const ads = [
-        { id: 1, imageUrl: 'https://images.pexels.com/photos/4099468/pexels-photo-4099468.jpeg?auto=compress&cs=tinysrgb&w=600&h=300&fit=crop', alt: 'Summer Discount 50% OFF' },
+interface AdCarouselProps {
+    banners?: Banner[];
+}
+
+const AdCarousel = ({ banners }: AdCarouselProps) => {
+    const defaultAds = [
+        { id: 1, imageUrl: 'https://placehold.co/1200x400/10b981/ffffff?text=50%25+Off+to+all+new+user!!', alt: '50% Off to all new user' },
         { id: 2, imageUrl: 'https://images.pexels.com/photos/4107120/pexels-photo-4107120.jpeg?auto=compress&cs=tinysrgb&w=600&h=300&fit=crop', alt: 'Book Maid Services Now' },
         { id: 3, imageUrl: 'https://images.pexels.com/photos/4246120/pexels-photo-4246120.jpeg?auto=compress&cs=tinysrgb&w=600&h=300&fit=crop', alt: 'Hassle-Free Shifting' },
     ];
+    const ads = banners && banners.length > 0 ? banners.map(banner => ({ id: banner.id, imageUrl: banner.image_url, alt: banner.alt_text })) : defaultAds;
     const [currentAd, setCurrentAd] = useState(0);
 
     useEffect(() => {

@@ -6,6 +6,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../../shared/lib/supabaseClient';
 import { GoogleMap, useJsApiLoader, Polygon, OverlayView } from '@react-google-maps/api';
+import { useBanners } from '../../shared/hooks/useBanners';
 
 
 // --- Local Imports for Service Logic and Data ---
@@ -363,7 +364,7 @@ const LandingPage = () => {
                     <div className="grid md:grid-cols-3 gap-10">
                         <div className="card-hover bg-white rounded-xl shadow-md overflow-hidden">
                             <div className="relative">
-                                <img src="https://placehold.co/600x400/16a34a/ffffff?text=Vlog+1" alt="Vlog thumbnail" className="w-full h-48 object-cover" />
+                                <img src={vlogBanners[0]?.image_url ?? 'https://placehold.co/600x400/16a34a/ffffff?text=Vlog+1'} alt={vlogBanners[0]?.alt_text ?? 'Vlog thumbnail'} className="w-full h-48 object-cover" />
                                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                                     <svg className="w-16 h-16 text-white/80" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"></path></svg>
                                 </div>
@@ -375,7 +376,7 @@ const LandingPage = () => {
                         </div>
                         <div className="card-hover bg-white rounded-xl shadow-md overflow-hidden">
                             <div className="relative">
-                                <img src="https://placehold.co/600x400/15803d/ffffff?text=Vlog+2" alt="Vlog thumbnail" className="w-full h-48 object-cover" />
+                                <img src={vlogBanners[1]?.image_url ?? 'https://placehold.co/600x400/15803d/ffffff?text=Vlog+2'} alt={vlogBanners[1]?.alt_text ?? 'Vlog thumbnail'} className="w-full h-48 object-cover" />
                                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                                     <svg className="w-16 h-16 text-white/80" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"></path></svg>
                                 </div>
@@ -387,7 +388,7 @@ const LandingPage = () => {
                         </div>
                         <div className="card-hover bg-white rounded-xl shadow-md overflow-hidden">
                             <div className="relative">
-                                <img src="https://placehold.co/600x400/14532d/ffffff?text=Vlog+3" alt="Vlog thumbnail" className="w-full h-48 object-cover" />
+                                <img src={vlogBanners[2]?.image_url ?? 'https://placehold.co/600x400/14532d/ffffff?text=Vlog+3'} alt={vlogBanners[2]?.alt_text ?? 'Vlog thumbnail'} className="w-full h-48 object-cover" />
                                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                                     <svg className="w-16 h-16 text-white/80" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"></path></svg>
                                 </div>

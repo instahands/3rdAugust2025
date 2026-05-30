@@ -27,6 +27,7 @@ export const WorkerOnboardingPage = ({ user, onOnboardingComplete }: WorkerOnboa
                 name: name,
                 phone: phone,
                 address: address,
+                role: 'worker',
                 worker_status: 'pending'
             })
             .eq('id', user.id);

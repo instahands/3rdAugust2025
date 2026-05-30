@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../shared/lib/supabaseClient';
-import { Profile, Order, Address } from '../../shared/types/types';
+import { Profile, Order, Address, Banner } from '../../shared/types/types';
 
 export const useAdminData = () => {
     const [users, setUsers] = useState<Profile[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
     const [addresses, setAddresses] = useState<Address[]>([]);
+    const [banners, setBanners] = useState<Banner[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -36,10 +37,11 @@ export const useAdminData = () => {
 
             // STEP 2: Data fetching
             console.log("DEBUG: Session confirmed. Fetching users, orders, and addresses...");
-            const [usersResponse, ordersResponse, addressesResponse] = await Promise.all([
+            const [usersResponse, ordersResponse, addressesResponse, bannersResponse] = await Promise.all([
                 supabase.from('profiles').select('*'),
                 supabase.from('orders').select('*'),
-                supabase.from('addresses').select('*')
+                supabase.from('addresses').select('*'),
+                supabase.from('banners').select('*')
             ]);
 
             // Log users response
@@ -65,6 +67,7 @@ export const useAdminData = () => {
             }
             console.log("DEBUG: Addresses data received from Supabase:", addressesResponse.data);
             setAddresses(addressesResponse.data || []);
+            setBanners(bannersResponse.error ? [] : bannersResponse.data || []);
 
         } catch (err: any) {
             console.error("--- DEBUG: A critical error occurred! ---", err);
@@ -87,6 +90,7 @@ export const useAdminData = () => {
         users, 
         orders, 
         addresses, 
+        banners,
         loading, 
         error, 
         refetchData: fetchData,

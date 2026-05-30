@@ -9,10 +9,11 @@ import WorkerManagementPage from './pages/WorkerManagementPage';
 import OrderManagementPage from './pages/OrderManagementPage';
 import AddressManagementPage from './pages/AddressManagementPage';
 import SettingsPage from './pages/SettingsPage';
-import { DataItem, Notification, Profile } from '../shared/types/types';
+import { DataItem, Notification, Profile, Banner } from '../shared/types/types';
 import { supabase } from '../shared/lib/supabaseClient';
 import Modal from './components/shared/Modal';
 import FormComponent from './components/shared/FormComponent';
+import BannerManagementPage from './pages/BannerManagementPage';
 import { useAdminData } from './hooks/useAdminData';
 
 export const AdminPanel = () => {
@@ -21,7 +22,7 @@ export const AdminPanel = () => {
     const [isDarkMode, setDarkMode] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
-    const { users, orders, addresses, loading, refetchData } = useAdminData();
+    const { users, orders, addresses, banners, loading, refetchData } = useAdminData();
     const workers = users.filter(u => u.role === 'worker');
 
     const [isModalOpen, setModalOpen] = useState(false);
@@ -83,7 +84,7 @@ export const AdminPanel = () => {
     };
 
     const handleDelete = async (type: string, id: string | number) => {
-        const tableName = type === 'User' || type === 'Worker' ? 'profiles' : type === 'Order' ? 'orders' : 'addresses';
+        const tableName = type === 'User' || type === 'Worker' ? 'profiles' : type === 'Order' ? 'orders' : type === 'Banner' ? 'banners' : 'addresses';
         if (window.confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) {
             const { error } = await supabase.from(tableName).delete().eq('id', id);
             if (error) {
@@ -117,7 +118,7 @@ export const AdminPanel = () => {
             }
         } else {
             const isEditing = modalContent.data && 'id' in modalContent.data && modalContent.data.id;
-            const tableName = modalContent.type === 'User' || modalContent.type === 'Worker' ? 'profiles' : modalContent.type === 'Order' ? 'orders' : 'addresses';
+            const tableName = modalContent.type === 'User' || modalContent.type === 'Worker' ? 'profiles' : modalContent.type === 'Order' ? 'orders' : modalContent.type === 'Banner' ? 'banners' : 'addresses';
             
             let response;
             if (isEditing) {
@@ -192,6 +193,13 @@ export const AdminPanel = () => {
                     onAdd={() => handleAdd('Address', { address_type: 'Home', street_address: '', city: '' })}
                     onEdit={(address) => handleEdit('Address', address)}
                     onDelete={(id) => handleDelete('Address', id)}
+                />;
+            case 'Banner Management':
+                return <BannerManagementPage
+                    banners={banners}
+                    onAdd={() => handleAdd('Banner', { page: 'home', section: 'carousel', image_url: '', alt_text: '', title: '', description: '', link: '' })}
+                    onEdit={(banner) => handleEdit('Banner', banner)}
+                    onDelete={(id) => handleDelete('Banner', id)}
                 />;
             case 'Settings':
                 return <SettingsPage />;

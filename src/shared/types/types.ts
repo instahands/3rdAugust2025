@@ -76,8 +76,19 @@ export interface WorkerLocation {
     updated_at: string;
 }
 
+export interface Banner {
+    id: number;
+    page: string;
+    section: string;
+    image_url: string;
+    alt_text: string;
+    title?: string;
+    description?: string;
+    link?: string;
+    created_at?: string;
+}
 
-export type DataItem = Profile | Order | Address;
+export type DataItem = Profile | Order | Address | Banner;
 
 export interface LocationCoords {
     lat: number;
