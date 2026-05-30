@@ -44,6 +44,10 @@ export const useAdminData = () => {
                 supabase.from('banners').select('*')
             ]);
 
+            // --- TEMPORARY DEBUG LOGS (remove after debugging) ---
+            console.log('PROFILES RESPONSE', usersResponse);
+            console.log('PROFILES DATA', usersResponse.data);
+
             // Log users response
             if (usersResponse.error) {
                 console.error("DEBUG: Error fetching users!", usersResponse.error);

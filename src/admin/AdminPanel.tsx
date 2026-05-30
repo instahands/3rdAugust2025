@@ -25,6 +25,10 @@ export const AdminPanel = () => {
     const { users, orders, addresses, banners, loading, refetchData } = useAdminData();
     const workers = users.filter(u => u.role === 'worker');
 
+    // --- TEMPORARY DEBUG LOGS (remove after debugging) ---
+    console.log('USERS', users);
+    console.log('WORKERS', workers);
+
     const [isModalOpen, setModalOpen] = useState(false);
     const [modalContent, setModalContent] = useState<{ title: string; data: DataItem | Partial<DataItem> | null; type: string }>({ title: '', data: null, type: '' });
 
