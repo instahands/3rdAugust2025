@@ -7,6 +7,7 @@ import { Service } from '../../shared/types/types';
 // Import reusable components
 import { UserIcon, SearchIcon} from '../components/common/Icons';
 import AdCarousel from '../components/home/AdCarousel';
+import SectionBanner from '../components/home/SectionBanner';
 import ServiceGrid from '../components/home/ServiceGrid';
 import { useBanners } from '../../shared/hooks/useBanners';
 
@@ -40,11 +41,14 @@ const HeaderLogo = () => (
     </div>
 );
 
-// --- Component now uses real-time banner updates ---
+// --- Component now uses real-time banner updates for multiple sections ---
 export default function HomePage({ setPage, currentUser, orders, viewServiceDetail, startBooking }: HomePageProps) {
     // Enable real-time updates for banners in admin - when admin changes banners, they appear instantly
     const { banners, loading } = useBanners(true);
+    
+    // Filter banners by section
     const homePageBanners = banners.filter(banner => banner.page === 'home' && banner.section === 'carousel');
+    const categoriesBanners = banners.filter(banner => banner.page === 'home' && banner.section === 'categories');
     const recentBookings = orders.filter(order => new Date(order.date) < new Date()).slice(0, 5);
 
     return (
@@ -64,12 +68,19 @@ export default function HomePage({ setPage, currentUser, orders, viewServiceDeta
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"><SearchIcon /></div>
             </div>
             
+            {/* Home Page Carousel Banner */}
             <AdCarousel banners={homePageBanners} loading={loading} />
 
-            <div>
-                <h2 className="text-lg font-bold text-gray-800 mb-4">Categories</h2>
-                {/* This now passes the correct Service type */}
-                <ServiceGrid services={services} onServiceClick={viewServiceDetail} />
+            {/* Categories Section with Banner */}
+            <div className="space-y-4">
+                {/* Categories Section Banner */}
+                <SectionBanner banners={categoriesBanners} loading={loading} />
+
+                <div>
+                    <h2 className="text-lg font-bold text-gray-800 mb-4">Categories</h2>
+                    {/* This now passes the correct Service type */}
+                    <ServiceGrid services={services} onServiceClick={viewServiceDetail} />
+                </div>
             </div>
 
             {recentBookings.length > 0 && (

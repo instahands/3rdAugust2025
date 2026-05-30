@@ -25,7 +25,8 @@ interface BannerManagementPageProps {
 
 // Hardcode the specific placements that actually exist in the frontend
 const PREDEFINED_PLACEMENTS = [
-    { page: 'home', section: 'carousel', label: 'Home Page', subLabel: 'Carousel' },
+    { page: 'home', section: 'carousel', label: 'Home Page', subLabel: 'Carousel (Top)' },
+    { page: 'home', section: 'categories', label: 'Home Page', subLabel: 'Categories Section' },
     { page: 'landing', section: 'vlogs', label: 'Landing Page', subLabel: 'Vlogs' }
 ];
 
