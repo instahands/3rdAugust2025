@@ -10,23 +10,30 @@ import { AdminPanel } from "./admin/AdminPanel";
 // 1. Import the WorkerDashboard component
 import { WorkerDashboard } from "./worker/WorkerDashboard";
 
+// Import Notification Provider and Toast
+import { NotificationProvider } from "./shared/context/NotificationContext";
+import Toast from "./shared/components/Toast";
+
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Landing page route */}
-        <Route path="/" element={<LandingPage />} />
+    <NotificationProvider>
+      <Router>
+        <Routes>
+          {/* Landing page route */}
+          <Route path="/" element={<LandingPage />} />
 
-        {/* Main app route */}
-        <Route path="/app/*" element={<MainApp />} />
+          {/* Main app route */}
+          <Route path="/app/*" element={<MainApp />} />
 
-        {/* Admin panel route */}
-        <Route path="/admin/*" element={<AdminPanel />} />
+          {/* Admin panel route */}
+          <Route path="/admin/*" element={<AdminPanel />} />
 
-        {/* 2. Add the new route for the worker dashboard */}
-        <Route path="/worker/*" element={<WorkerDashboard />} />
-      </Routes>
-    </Router>
+          {/* 2. Add the new route for the worker dashboard */}
+          <Route path="/worker/*" element={<WorkerDashboard />} />
+        </Routes>
+      </Router>
+      <Toast />
+    </NotificationProvider>
   );
 }
 

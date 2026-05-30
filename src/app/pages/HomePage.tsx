@@ -40,9 +40,10 @@ const HeaderLogo = () => (
     </div>
 );
 
-// --- Component remains the same, but now uses the correct types ---
+// --- Component now uses real-time banner updates ---
 export default function HomePage({ setPage, currentUser, orders, viewServiceDetail, startBooking }: HomePageProps) {
-    const { banners } = useBanners();
+    // Enable real-time updates for banners in admin - when admin changes banners, they appear instantly
+    const { banners, loading } = useBanners(true);
     const homePageBanners = banners.filter(banner => banner.page === 'home' && banner.section === 'carousel');
     const recentBookings = orders.filter(order => new Date(order.date) < new Date()).slice(0, 5);
 
@@ -63,7 +64,7 @@ export default function HomePage({ setPage, currentUser, orders, viewServiceDeta
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"><SearchIcon /></div>
             </div>
             
-            <AdCarousel banners={homePageBanners} />
+            <AdCarousel banners={homePageBanners} loading={loading} />
 
             <div>
                 <h2 className="text-lg font-bold text-gray-800 mb-4">Categories</h2>
