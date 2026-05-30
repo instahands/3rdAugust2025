@@ -66,6 +66,8 @@ const LandingPage = () => {
     });
 
     // --- Component State ---
+    const { banners: allBanners } = useBanners();
+    const vlogBanners = allBanners.filter(b => b.page === 'landing' && b.section === 'vlogs');
     const [popups, setPopups] = useState<Popup[]>([]);
     const [problemStatement, setProblemStatement] = useState(problems[0]);
     const [mobileNumber, setMobileNumber] = useState('');

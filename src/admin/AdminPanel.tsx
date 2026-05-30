@@ -201,9 +201,7 @@ export const AdminPanel = () => {
             case 'Banner Management':
                 return <BannerManagementPage
                     banners={banners}
-                    onAdd={() => handleAdd('Banner', { page: 'home', section: 'carousel', image_url: '', alt_text: '', title: '', description: '', link: '' })}
-                    onEdit={(banner) => handleEdit('Banner', banner)}
-                    onDelete={(id) => handleDelete('Banner', id)}
+                    refetchData={refetchData}
                 />;
             case 'Settings':
                 return <SettingsPage />;
